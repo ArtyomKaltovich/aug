@@ -1,6 +1,7 @@
 from collections import Counter
 from functools import lru_cache
 from typing import List, Union, Dict, Tuple, Collection
+from scipy.special import comb
 
 complement_map = {"A": "T", "C": "G", "G": "C", "T": "A"}
 
@@ -350,3 +351,35 @@ def find_reverse_palindromes(dna: str, min_len: int=4, max_len: int=12, zero_bas
             if sub_dna == reverse_complement(sub_dna):
                 result.append((i, l))
     return helper_for_non_zero_based(result)
+
+
+def bernul(n, k, p):
+    """ returns probability of k occurrences in n Bernoulli trial with probability p
+        https://en.wikipedia.org/wiki/Bernoulli_trial
+    :param n: number of tests
+    :param k: number of successes
+    :param p: probability of every success
+    :return: probability of k occurrences in n Bernoulli trial
+    """
+    return comb(n, k) * p ** k * (1 - p) ** (n-k)
+
+
+def independent_alleles(heterozygous_number: int, generation_number: int) -> float:
+    """ http://rosalind.info/problems/lia/
+    In this problem, we begin with Tom, who in the 0th generation has genotype Aa Bb. Tom has two children
+        in the 1st generation, each of whom has two children, and so on. Each organism always mates with an organism
+        having genotype Aa Bb.
+    :param heterozygous_number:
+    :type generation_number:
+    :return: The probability that at least heterozygous_number Aa Bb organisms will belong to the k-th generation of
+        Tom's family tree (don't count the Aa Bb mates at each level).
+        Assume that Mendel's second law holds for the factors.
+    >>> result = independent_alleles(1, 2)
+    >>> round(result, 3)
+    0.684
+    """
+    n_child = 2 ** generation_number
+    result = 1
+    for i in range(0, heterozygous_number):
+        result -= bernul(n_child, i, p=1/4)
+    return result
