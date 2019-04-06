@@ -53,6 +53,8 @@ def dna_to_rna(dna: str):
 
     Given a DNA string t corresponding to a coding strand, its transcribed RNA string u is formed by replacing all
         occurrences of 'T' in t with 'U' in u.
+    >>> dna_to_rna("GCAT")
+    'GCAU'
     """
     return dna.replace("T", "U")
 
@@ -180,12 +182,8 @@ def gc_rate(dna: str, procent=False):
 def hamming_distance(p, q):
     """ Compute the Hamming distance between two strings.
     :return: The Hamming distance between these strings.
-    :example:
-        Sample Input:
-            GGGCCGTTGGT
-            GGACCGTTGAC
-        Sample Output:
-            3
+    >>> hamming_distance("GGGCCGTTGGT", "GGACCGTTGAC")
+    3
     """
     result = 0
     for x, y in zip(p, q):
@@ -195,6 +193,12 @@ def hamming_distance(p, q):
 
 
 def find_motif(dna:str, motif: str, zero_based=True):
+    """ returns indexes of all occurrences of motif in dna.
+    :param dna: the string to search in
+    :param motif: the substring to search
+    :param zero_based: if True will return indexes starting with 1 instead of 0.
+    :return: indexes of all occurrences of motif in dna
+    """
     def helper_for_non_zero_based(indexes: List[int]):
         if not zero_based:
             return [i + 1 for i in indexes]
@@ -264,21 +268,15 @@ def dominant_probability(homozygous_dominant: int, heterozygous: int, homozygous
     return result
 
 
-def profile(dna: Union[list, str], update: Union[list, None]=None) -> dict:
+def profile(dna: Union[list, tuple, str], update: Union[list, None]=None) -> dict:
     """
     Function takes a list of strings DNA as input and returns the profile matrix (as a dictionary of lists).
     :param dna: a list of strings (or just one string) which represent a genome part
     :return: dictionary where keys are A, C, G, T and values are list with their occurrences in patterns
         on that index.
     :example:
-    Sample Input:
-        AACGTA
-        CCCGTT
-        CACCTT
-        GGATTA
-        TTCCGG
-    Sample Output:
-        {'A': [1, 2, 1, 0, 0, 2], 'C': [2, 1, 4, 2, 0, 0], 'G': [1, 1, 0, 2, 1, 1], 'T': [1, 1, 0, 1, 4, 2]}
+    >>> profile(("AACGTA","CCCGTT","CACCTT","GGATTA","TTCCGG"))
+    {'A': [1, 2, 1, 0, 0, 2], 'C': [2, 1, 4, 2, 0, 0], 'G': [1, 1, 0, 2, 1, 1], 'T': [1, 1, 0, 1, 4, 2]}
     """
     dnas = dna if isinstance(dna, list) or isinstance(dna, tuple) else (dna,)
     k = len(dnas[0])
@@ -297,14 +295,8 @@ def consensus(dnas: Union[list, None]=None, precalculated_profile: Union[Dict[st
     :param dnas: A set of kmers.
     :return: A consensus string of dnas.
     :example:
-    Sample Input:
-        AACGTA
-        CCCGTT
-        CACCTT
-        GGATTA
-        TTCCGG
-    Sample Output:
-        CACCTA
+    >>> consensus(("AACGTA","CCCGTT","CACCTT","GGATTA","TTCCGG"))
+    'CACCTA'
     """
     k = len(dnas[0]) if dnas else len(precalculated_profile["A"])
     count = precalculated_profile if precalculated_profile else profile(dnas)
