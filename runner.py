@@ -3,8 +3,8 @@ from utils import *
 def read_digits():
     with open("data/rosalind_data.txt", "r") as f:
         line = f.readline().strip()
-        i, j = map(int, line.split())
-    return i, j
+        i = list(map(int, line.split()))
+    return i
 
 
 def for_fasta():
@@ -23,7 +23,8 @@ def read_file():
 
 
 if __name__ == '__main__':
-    j, i = read_digits()
-    print(j, i)
-    result = independent_alleles(i, j)
-    print(round(result, 3))
+    n, *_ = read_digits()
+    permutations = list(signed_permutation(n))
+    print(len(permutations))
+    for p in permutations:
+        print(*p)

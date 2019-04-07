@@ -2,6 +2,7 @@ from collections import Counter
 from functools import lru_cache
 from typing import List, Union, Dict, Tuple, Collection
 from scipy.special import comb
+from itertools import permutations, combinations_with_replacement, product
 
 complement_map = {"A": "T", "C": "G", "G": "C", "T": "A"}
 
@@ -383,3 +384,17 @@ def independent_alleles(heterozygous_number: int, generation_number: int) -> flo
     for i in range(0, heterozygous_number):
         result -= bernul(n_child, i, p=1/4)
     return result
+
+
+def signed_permutation(n: int):
+    """ A signed permutation of length n is some ordering of the positive integers {1,2,…,n} in which each integer is
+    then provided with either a positive or negative sign (for the sake of simplicity, we omit the positive sign).
+    For example, π=(5,−3,−2,1,4) is a signed permutation of length 5.
+    :param n: positive integer
+    :return: permutations for every digit in [1..n]
+    >>> p = signed_permutation(2)
+    >>> list(p)
+    [[-1, -2], [-1, 2], [1, -2], [1, 2], [-2, -1], [-2, 1], [2, -1], [2, 1]]
+    """
+    for p in product(permutations(list(range(1, n+1))), product([-1, 1], repeat=n)):
+        yield [i * j for i, j in zip(*p)]
