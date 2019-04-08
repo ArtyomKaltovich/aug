@@ -31,7 +31,7 @@ def test_reverse_complement():
     assert expected == reverse_complement(param)
 
 
-@pytest.mark.skip
+@pytest.mark.skip("file operations")
 def test_fasta_file_do():
     def helper(id, string):
         return id, string
@@ -43,8 +43,8 @@ def test_fasta_file_do():
     assert expected == actual
 
 
-@pytest.mark.skip
-def test_fasta_file_do_sort():
+@pytest.mark.skip("file operations")
+def test_fasta_file_do_max():
     id_max = None
     gc_max = None
 
@@ -57,7 +57,7 @@ def test_fasta_file_do_sort():
 
     fasta_data_do(r"data/test_fasta.txt", helper)
     assert "Rosalind_0808" == id_max
-    assert 60.919540 == pytest.approx(gc_max)
+    assert 60.919540 == pytest.approx(gc_max, FLOAT_EQUALITY_ACCURACY)
 
 
 def test_gc_rate():
