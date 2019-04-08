@@ -10,6 +10,15 @@ def test_dna_to_rna():
     assert expected == dna_to_rna(param)
 
 
+def test_rna_to_protein():
+    assert "MAMAPRTEINSTRING" == rna_to_protein("AUGGCCAUGGCGCCCAGAACUGAGAUCAAUAGUACCCGUAUUAACGGGUGA")
+    assert "MATE" == rna_to_protein("AGAUGGCCACCGAGUAA", start=start_with_start_codon)
+
+
+def test_rna_to_protein_only_stop():
+    assert "" == rna_to_protein("UAA")
+
+
 def test_gene_to_protein():
     gene = "ATGGTCTACATAGCTGACAAACAGCACGTAGCAATCGGTCGAATCTCGAGAGGCATATGGTCACATGATCGGTCGAGCGTGTTTCAAAGTTTGCGCCTAG"
     intrones = "ATCGGTCGAA", "ATCGGTCGAGCGTGT"
@@ -59,14 +68,6 @@ def test_gc_rate():
 
 def test_hamming_distance():
     assert 7 == hamming_distance("GAGCCTACTAACGGGAT", "CATCGTAATGACGGCCT")
-
-
-def test_rna_to_protein():
-    assert "MAMAPRTEINSTRING" == rna_to_protein("AUGGCCAUGGCGCCCAGAACUGAGAUCAAUAGUACCCGUAUUAACGGGUGA")
-
-
-def test_rna_to_protein_only_stop():
-    assert "" == rna_to_protein("UAA")
 
 
 def test_find_motif():

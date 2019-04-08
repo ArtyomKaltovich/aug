@@ -5,7 +5,7 @@ from scipy.special import comb
 from itertools import permutations, combinations_with_replacement, product
 
 complement_map = {"A": "T", "C": "G", "G": "C", "T": "A"}
-
+START_CODON = "AUG"
 STOP_CODON = object()  # dummy object for stop codon
 rna_codon_table = { "UUU": "F",         "CUU": "L",     "AUU": "I",      "GUU": "V",
                     "UUC": "F",         "CUC": "L",     "AUC": "I",      "GUC": "V",
@@ -61,11 +61,32 @@ def dna_to_rna(dna: str):
     return dna.replace("T", "U")
 
 
-def rna_to_protein(rna: str, to_str=True):
+def start_with_start_codon(rna: str):
+    """ helper method to start protein sequence generation from start codon.
+    :param rna: rna string
+    :return: first position of start codon in rna, or -1 if not presentd
+    """
+    return rna.find(START_CODON)
+
+
+def start_with_the_beggining(rna: str):
+    """ helper method for processing whole rna sequence starting with 0 index, not START_CODON
+    :param rna: rna string
+    :return: 0
+    """
+    return 0
+
+
+def rna_to_protein(rna: str, to_str=True, start=start_with_the_beggining):
     """The RNA codon table dictates the details regarding the encoding of specific codons into the amino acid alphabet.
         Given: An RNA string s corresponding to a strand of mRNA (of length at most 10 kbp).
         Return: The protein string encoded by s.
     """
+    pos = start(rna)
+    if pos < 0:
+        return None if not to_str else ""
+    else:
+        rna = rna[pos:]
     result = [""] * (len(rna) // 3)
     for i in range(len(result)):
         elem = rna_codon_table[rna[3 * i: 3 * i + 3]]
