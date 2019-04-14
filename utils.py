@@ -221,14 +221,9 @@ def find_motif(dna:str, motif: str, zero_based=True):
     """ returns indexes of all occurrences of motif in dna.
     :param dna: the string to search in
     :param motif: the substring to search
-    :param zero_based: if True will return indexes starting with 1 instead of 0.
+    :param zero_based: if False will return indexes starting with 1 instead of 0.
     :return: indexes of all occurrences of motif in dna
     """
-    def helper_for_non_zero_based(indexes: List[int]):
-        if not zero_based:
-            return [i + 1 for i in indexes]
-        else:
-            return indexes
 
     index = 0
     result = []
@@ -237,7 +232,19 @@ def find_motif(dna:str, motif: str, zero_based=True):
         if index >=0:
             result.append(index)
             index += 1
-    return helper_for_non_zero_based(result)
+    return _helper_for_non_zero_based(result, zero_based)
+
+
+def _helper_for_non_zero_based(indexes: List, zero_based: bool):
+    """ Transform indexes based on zero_based.
+    :param indexes: list to transform
+    :param zero_based: if False indexes will be increased by 1
+    :return: list of indexes transformed accordingly to zero_based
+    """
+    if not zero_based:
+        return [i + 1 for i in indexes]
+    else:
+        return indexes
 
 
 @lru_cache(None)
@@ -486,3 +493,26 @@ def dna_probability(dna:str, gc:float, return_log=False) -> float:
         return math.log(p, 10)
     else:
         return p
+
+
+def find_spliced_motif(dna: str, motif: str, zero_based=True) -> Union[List[int], int]:
+    """ Returns the the positions of a subsequence(motif) in the string dna at which the symbols of the subsequence
+        appear.
+        E.g. the indices of ACG in TATGCTAAGATC can be represented by (2, 5, 9).
+    :param dna: dna string
+    :param motif: subsequence to search
+    :param zero_based: if false will return indexes starting with 1 instead of 0.
+    :return: list of indices
+    """
+
+    j = 0
+    result = []
+    for i, l in enumerate(dna):
+        if l == motif[j]:
+            result.append(i)
+            j += 1
+        if j >= len(motif):
+            break
+    else:
+        return -1
+    return _helper_for_non_zero_based(result, zero_based)

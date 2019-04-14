@@ -171,3 +171,17 @@ def test_adjacency_list():
 def test_dna_probability():
     assert 1.831e-06 == pytest.approx(dna_probability("ACGATACAA", 0.129), FLOAT_EQUALITY_ACCURACY)
     assert -5.737 == pytest.approx(dna_probability("ACGATACAA", 0.129, return_log=True), FLOAT_EQUALITY_ACCURACY)
+
+
+def test_find_spliced_motif():
+    dna = "ACGTACGTGACG"
+    motif = "GTA"
+    actual = find_spliced_motif(dna, motif, zero_based=False)
+    for a, i in zip(actual, range(len(motif))):
+        assert dna[a - 1] == motif[i]
+
+
+def test_find_spliced_motif_non_found():
+    dna = "ACGTACGTGACG"
+    motif = "123"
+    assert -1 == find_spliced_motif(dna, motif, zero_based=False)

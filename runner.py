@@ -24,9 +24,6 @@ def read_file():
 
 
 if __name__ == '__main__':
-    dna, probs = read_file()
-    probs = map(float, probs.split())
-    for p in probs:
-        print(f"{dna_probability(dna, p, return_log=True):.3f}", end=" ")
-    #for r in result:
-    #    print(*r)
+    dna, motif = fasta_file_iter("data/rosalind_data.txt")
+    print(dna, motif)
+    print(*find_spliced_motif(dna[1], motif[1], zero_based=False))
