@@ -44,6 +44,14 @@ def test_fasta_file_do():
 
 
 @pytest.mark.skip("file operations")
+def test_read_fasta():
+    expected = [("Rosalind_6404", "CCTGCGGAAGATCGGCACTAGAATAGCCAGAACCGTTTCTCTGAGGCTTCCGGCCTTCCCTCCCACTAATAATTCTGAGG"),
+                ("Rosalind_5959", "CCATCGGTAGCGCATCCTTAGTCCAATTAAGTCCCTATCCAGGCGCTCCGCCGAAGGTCTATATCCATTTGTCAGCAGACACGC"),
+                ("Rosalind_0808", "CCACCCTCGTGGTATGGCTAGGCATTCAGGAACCGGAGAACGCTTCAGACCAGCCCGGACTGGGAACCTGCGGGCAGTAGGTGGAAT")]
+    assert expected == read_fasta(r"data/test_fasta.txt")
+
+
+@pytest.mark.skip("file operations")
 def test_fasta_file_do_max():
     id_max = None
     gc_max = None
@@ -75,6 +83,29 @@ def test_find_motif():
     assert [2, 4, 10] == find_motif("GATATATGCATATACTT", "ATAT", zero_based=False)
     assert [0, 10, 17] == find_motif("find_me789find_mefind_mefind_m", "find_me")
     assert [3] == find_motif("012find_me", "find_me")
+    assert [6] == find_motif("AGGCTGAATTCAGATCAC", "GAATTC", zero_based=False)
+
+
+def test_find_motif_long():
+    assert [237] == find_motif(
+        """AAGGCAACATTTCTTAGTTATATATGCTTGTAGTGAAGAAAGATGTGAAAGTCTGACAAGAGAACAAGAC
+            GAAGGAGGAGTCTTTCTCCAAGTCTTCAACATTGCAGAATCTGATGCATATGAACCCATTTTCTCTACAA
+            AATGTTGCAACCCTAGAGAGCAAAACAAAACATACCCATAATCAGAAATGATCTGACGAAAATCGAGTTA
+            CAATACACAAGAGAACATTTTTTTTAGAATTCTCAGATATTAAAAATGACACAGAAAGCTTTATGCTTTT
+            TCCTCTTAAAAGACTAAACAAGTTGAAATCTAGAGAAAGAACTGACCAACCTGAGACAACGAGAGAGACT
+            TGAGAGATTTCTTCGGCACTTACTATTAGATCTAGGGTTTAGATACCATTTATATAGAGAAAGTTTTAGA
+            GTTGCACAAAACATAAATTAATGTGTTAGAATGGGCCTAAAGCTACAAAGCTGGCCTGGTTTTGTTTTAA
+            ATTGTTGGTTTCATGGACATTTTCGACATCTTCGAACATGTTATTTTTTGAGACTATGCAAACTTGAAGC
+            TCTTTACTCGAGTTGAAATCGTATGACTTATAGTGAAATTGTACATTTGGTTTCGATTTTTCTTTTACAC
+            TCTTTCTTCTTTGAGCCGGTAAATTTGGAATTTTTCTTCATAGTGGAATCATATGCTGTTTTTTTTTTTT
+            ATAGTAAACGTTACAAGAATGAATGGTAACTTTATCCAAAAAAAAAGAATCATATTATTTTGAAATGATT
+            TTAAGTAAATTCTAGGTTCAATAACATAAGATTTGAGACTAAATTTAAAATTTCTTAGTAAAATATATGA
+            TTTTTTTATAAATACCTATAAAATTAGTAATTAACAATACGGATTACGTACTGAATCAAACCCTTTGTAT
+            TTTGTTTTTCCTAGAAATAAGTGTAGATTTTTGGAATTTTGCATTAATTAATCACTTCTTGGGTCTGAAA
+            GGCTAAAACAAAAGGAACCGAAAGAGAATGTTCTCTCTGTCTTTATCTTCCACTTCCACTTCCAGGTCGC
+            GTTGCTTCACTCTCCATTGCAAAGAGAGGTCTCTGCGATTTCTGCAACTCACCCCTGAAACCTTCTTAAT
+            TTACTTCAACTGCCGCTATACCTAAAAACTTCATCTTTCTCCTCTGAGCTATG""".replace("\n", "").replace(" ", ""),
+        motif="GAATTC", zero_based=False)
 
 
 def test_rabbits_recurrence():
@@ -126,3 +157,17 @@ def test_n_reverse_translation():
 def test_find_reverse_palindromes():
     expected = [(4, 6), (5, 4), (6, 6), (7, 4), (17, 4), (18, 4), (20, 6), (21, 4)]
     assert expected == find_reverse_palindromes("TCAATGCATGCGGGTCTATATGCAT", zero_based=False)
+
+
+@pytest.mark.skip("file operations")
+def test_adjacency_list():
+    expected = [('Rosalind_0498', 'Rosalind_2391'), ('Rosalind_0498', 'Rosalind_0442'), ('Rosalind_2391', 'Rosalind_2323')]
+    actual = adjacency_list("data/test_adjacency_list.txt", k=3)
+    assert len(expected) == len(actual)
+    for val in expected:
+        assert val in actual
+
+
+def test_dna_probability():
+    assert 1.831e-06 == pytest.approx(dna_probability("ACGATACAA", 0.129), FLOAT_EQUALITY_ACCURACY)
+    assert -5.737 == pytest.approx(dna_probability("ACGATACAA", 0.129, return_log=True), FLOAT_EQUALITY_ACCURACY)

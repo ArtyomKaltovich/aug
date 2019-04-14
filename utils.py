@@ -1,8 +1,10 @@
-from collections import Counter
+import math
+from collections import Counter, defaultdict
 from functools import lru_cache
+from itertools import permutations, product
 from typing import List, Union, Dict, Tuple, Collection
+
 from scipy.special import comb
-from itertools import permutations, combinations_with_replacement, product
 
 complement_map = {"A": "T", "C": "G", "G": "C", "T": "A"}
 START_CODON = "AUG"
@@ -419,3 +421,68 @@ def signed_permutation(n: int):
     """
     for p in product(permutations(list(range(1, n+1))), product([-1, 1], repeat=n)):
         yield [i * j for i, j in zip(*p)]
+
+
+def adjacency_list(fasta_file_path:str, k:int=3, prefixes:Union[str, None]=None,
+                   suffixes:Union[str, None]=None) -> Union[List[str], List[Tuple[str, str]]]:
+    """ Return adjacency_list of dna in fasta file specified in fasta_file_path.
+    For a collection of strings and a positive integer k, return the overlap graph in which each string is represented
+        by a node, and string s is connected to string t with a directed edge when there is a length k suffix of s
+        that matches a length k prefix of t, as long as s !=t;
+        we demand s != t to prevent directed loops in the overlap graph (although directed cycles may be present).
+    :param fasta_file_path: path to file with dna in fasta format
+    :param k: length of prefixes and suffixes
+    :param prefixes: precalculated prefixes or None
+    :param suffixes: precalculated suffixes or None
+    :return: Overlap graph in form of adjacency list
+    """
+    prefixes = prefixes or defaultdict(set)
+    suffixes = suffixes or defaultdict(set)
+
+    for id, string in fasta_file_iter(fasta_file_path):
+        prefixes[string[:k]].add(id)
+        suffixes[string[-k:]].add(id)
+
+    result = []
+    for suffix, ids in suffixes.items():
+        for a in ((start, finish) for start in ids for finish in prefixes[suffix] if start != finish):
+            result.append(a)
+    return result
+
+
+def read_fasta(fasta_file_path:str):
+    result = []
+    for id, string in fasta_file_iter(fasta_file_path):
+        result.append((id, string))
+    return result
+
+
+def dna_probability(dna:str, gc:float, return_log=False) -> float:
+    """ For giving dna string and probability of g or c nucleotide return probability of that string or log base 10
+    of that probability if return_log is set to True.
+    :param dna: dna string
+    :param gc: probability of g or c nucleotide (gc-rate)
+    :param return_log: set true if you want to get log base 10 of probability
+    :return: probability of giving dna string or log base 10 of probability
+    >>> result = dna_probability("ACGATACAA", 0.287)
+    >>> round(result, 9)
+    6.066e-06
+    >>> result = dna_probability("ACGATACAA", 0.287, return_log=True)
+    >>> round(result, 3)
+    -5.217
+    """
+    at = (1 - gc) / 2.0
+    gc /= 2.0
+
+    p = 1
+    for l in dna:
+        if l in "AT":
+            p *= at
+        elif l in "CG":
+            p *= gc
+        else:
+            raise ValueError("You should use dna string.")
+    if return_log:
+        return math.log(p, 10)
+    else:
+        return p

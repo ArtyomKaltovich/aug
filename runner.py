@@ -1,10 +1,12 @@
 from utils import *
+from time import perf_counter
+import math
 
 def read_digits():
     with open("data/rosalind_data.txt", "r") as f:
         line = f.readline().strip()
-        i = list(map(int, line.split()))
-    return i
+        n, k = list(map(int, line.split()))
+    return n, k
 
 
 def for_fasta():
@@ -16,15 +18,15 @@ def for_fasta():
 
 def read_file():
     with open("data/rosalind_data.txt", "r") as f:
-        line = f.readline().strip()
+        for line in f:
+            yield line.strip()
         #i, j = read_digits(dna)
-
-        print(find_reverse_palindromes(line))
 
 
 if __name__ == '__main__':
-    n, *_ = read_digits()
-    permutations = list(signed_permutation(n))
-    print(len(permutations))
-    for p in permutations:
-        print(*p)
+    dna, probs = read_file()
+    probs = map(float, probs.split())
+    for p in probs:
+        print(f"{dna_probability(dna, p, return_log=True):.3f}", end=" ")
+    #for r in result:
+    #    print(*r)
