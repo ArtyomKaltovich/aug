@@ -24,6 +24,11 @@ def read_file():
 
 
 if __name__ == '__main__':
-    dna, motif = fasta_file_iter("data/rosalind_data.txt")
-    print(dna, motif)
-    print(*find_spliced_motif(dna[1], motif[1], zero_based=False))
+    with open("data/answer.txt", "w"):
+        pass  # recreate the file
+    alphabet, length = read_file()
+    alphabet = alphabet.strip().replace(" ", "")
+    length = int(length)
+    print(alphabet, length)
+    for value in enumerate_kmers(alphabet, length):
+        print(value, file=open("data/answer.txt", "a"))

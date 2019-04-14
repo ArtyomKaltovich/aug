@@ -2,7 +2,6 @@ import itertools
 import math
 from collections import Counter, defaultdict
 from functools import lru_cache
-from itertools import permutations, product
 from typing import List, Union, Dict, Tuple, Collection
 
 from scipy.special import comb
@@ -427,7 +426,7 @@ def signed_permutation(n: int):
     >>> list(p)
     [[-1, -2], [-1, 2], [1, -2], [1, 2], [-2, -1], [-2, 1], [2, -1], [2, 1]]
     """
-    for p in product(permutations(list(range(1, n+1))), product([-1, 1], repeat=n)):
+    for p in itertools.product(itertools.permutations(list(range(1, n+1))), itertools.product([-1, 1], repeat=n)):
         yield [i * j for i, j in zip(*p)]
 
 
@@ -536,3 +535,19 @@ def edit_distance(str1, str2, reconstract_answer=False):
         # TODO: reconstract answer
     else:
         return distances[-1][-1]
+
+
+def enumerate_kmers(alphabet: Union[str, List[str]], length: int):
+    """ Create generator which will return all words with specified length (k-mers) which can be formed from alphabet.
+    :param alphabet:
+    :param length: or k in k-mers, length of created words
+    :return: all possible words one by one
+    >>> result = enumerate_kmers("ab", 3)
+    >>> list(result)
+    ['aaa', 'aab', 'aba', 'abb', 'baa', 'bab', 'bba', 'bbb']
+    >>> result = enumerate_kmers("ABCG", 2)
+    >>> list(result)
+    ['AA', 'AB', 'AC', 'AG', 'BA', 'BB', 'BC', 'BG', 'CA', 'CB', 'CC', 'CG', 'GA', 'GB', 'GC', 'GG']
+    """
+    for value in itertools.product(*itertools.repeat(alphabet, length)):
+        yield "".join(value)
