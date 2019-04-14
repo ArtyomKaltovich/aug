@@ -185,3 +185,10 @@ def test_find_spliced_motif_non_found():
     dna = "ACGTACGTGACG"
     motif = "123"
     assert -1 == find_spliced_motif(dna, motif, zero_based=False)
+
+
+def test_edit_distance():
+    assert 0 == edit_distance("ab", "ab")
+    assert 2 == edit_distance("", "ab")
+    assert 3 == edit_distance("short", "ports")
+    assert 5 == edit_distance("editing", "distance")

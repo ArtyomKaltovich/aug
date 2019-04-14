@@ -1,3 +1,4 @@
+import itertools
 import math
 from collections import Counter, defaultdict
 from functools import lru_cache
@@ -516,3 +517,22 @@ def find_spliced_motif(dna: str, motif: str, zero_based=True) -> Union[List[int]
     else:
         return -1
     return _helper_for_non_zero_based(result, zero_based)
+
+
+def edit_distance(str1, str2, reconstract_answer=False):
+    """ Calculate editing distance between two strings.
+    >>> edit_distance("editing", "distance")
+    5
+    """
+    distances = [[0] * (len(str1) + 1) for _ in range(len(str2) + 1)]
+    distances[0] = [x for x in range(len(str1) + 1)]
+    for x in range(len(str2) + 1):
+        distances[x][0] = x
+    for i, j in itertools.product(list(range(1, len(str2) + 1)), list(range(1, len(str1) + 1))):
+        distances[i][j] = min(distances[i - 1][j] + 1, distances[i][j - 1] + 1,
+                              distances[i - 1][j - 1] + (str2[i - 1] != str1[j - 1]))
+    if reconstract_answer:
+        pass
+        # TODO: reconstract answer
+    else:
+        return distances[-1][-1]
