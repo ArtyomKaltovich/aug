@@ -549,5 +549,53 @@ def enumerate_kmers(alphabet: Union[str, List[str]], length: int):
     >>> list(result)
     ['AA', 'AB', 'AC', 'AG', 'BA', 'BB', 'BC', 'BG', 'CA', 'CB', 'CC', 'CG', 'GA', 'GB', 'GC', 'GG']
     """
-    for value in itertools.product(*itertools.repeat(alphabet, length)):
+    for value in itertools.product(alphabet, repeat=length):
         yield "".join(value)
+
+
+def string_to_kmers(s: str, k: int) -> List[str]:
+    """ Split string S to array of k-mers.
+    :param s: string to split
+    :param k: length of k-mers
+    :return: generator which returns k-mers of split string
+    >>> result = string_to_kmers("aaabaa", 2)
+    >>> list(result)
+    ['aa', 'ab', 'aa']
+    >>> result = string_to_kmers("ACGT", 3)
+    >>> list(result)
+    ['ACG', 'T']
+    """
+    for i in range(0, len(s), k):
+        yield s[i:i + k]
+
+
+def kmers_composition(dna: str, k: int, alphabet: str = "ACGT"):
+    """ For a fixed positive integer k, order all possible k-mers taken from an underlying alphabet lexicographically.
+    Then the k-mer composition of a string S can be represented by an array A for which A[m] denotes the number of times
+        that the mth k-mer (with respect to the lexicographic order) appears in s.
+    :param dna: dna string to represent in k-mer composition
+    :param k: length of k-mer
+    :param alphabet: alphabet of string
+    :return: k-mer composition of dna string
+    >>> result = kmers_composition("aaabaa", k=2, alphabet="ab")
+    >>> list(result)
+    [2, 1, 0, 0]
+    """
+    print(list(string_to_kmers(dna, k)))
+    dna = Counter(string_to_kmers(dna, k))
+    for k_mer in enumerate_kmers(alphabet, k):
+        yield dna[k_mer]
+
+
+def count_kmers(dna: str, k: int, alphabet: str = "ACGT"):
+    """ Count number of kmers lexicographically.
+    :param dna: dna string to count
+    :param k: length of k-mer
+    :param alphabet: alphabet of string
+    :return: number of k-mer occurs in string in lexicographical order
+    """
+    c = Counter(dna[i:i + k] for i in range(len(dna) - k + 1))
+    result = []
+    for k_mer in enumerate_kmers(alphabet, k):
+        result.append(c[k_mer])
+    return result

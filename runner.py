@@ -24,11 +24,5 @@ def read_file():
 
 
 if __name__ == '__main__':
-    with open("data/answer.txt", "w"):
-        pass  # recreate the file
-    alphabet, length = read_file()
-    alphabet = alphabet.strip().replace(" ", "")
-    length = int(length)
-    print(alphabet, length)
-    for value in enumerate_kmers(alphabet, length):
-        print(value, file=open("data/answer.txt", "a"))
+    for id, string in fasta_file_iter("data/rosalind_data.txt"):
+        print(*count_kmers(string, 4), file=open("data/answer.txt", "w"))

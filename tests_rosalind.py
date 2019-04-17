@@ -192,3 +192,18 @@ def test_edit_distance():
     assert 2 == edit_distance("", "ab")
     assert 3 == edit_distance("short", "ports")
     assert 5 == edit_distance("editing", "distance")
+
+
+def test_enumerate_kmers():
+    assert "ACGT" == "".join(enumerate_kmers("ACGT", 1))
+    assert "AAACCACC" == "".join(enumerate_kmers("AC", 2))
+
+
+def test_string_to_kmers():
+    assert [] == list(string_to_kmers("", 2))
+    assert ["aaaa", "bbbb", "cccc"] == list(string_to_kmers("aaaabbbbcccc", 4))
+
+
+def test_kmers_composition():
+    assert [0] * 16 == list(kmers_composition("", 2))
+    assert [2, 1, 1, 2] == list(kmers_composition("ACGATT", 1))
