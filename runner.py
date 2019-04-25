@@ -1,4 +1,5 @@
 from utils import *
+from Sets import Sets
 from time import perf_counter
 import math
 
@@ -24,5 +25,11 @@ def read_file():
 
 
 if __name__ == '__main__':
-    for id, string in fasta_file_iter("data/rosalind_data.txt"):
-        print(*count_kmers(string, 4), file=open("data/answer.txt", "w"))
+    reader = read_file()
+    n = int(next(reader))
+    sets = Sets(n)
+    with open("data/answer.txt", "w") as output:
+        for line in reader:
+            a, b = map(int, line.split())
+            sets.unite(a - 1, b - 1)
+        print(sets.n_disjoint - 1, file=output)
