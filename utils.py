@@ -1,5 +1,6 @@
 import itertools
 import math
+import numpy as np
 from collections import Counter, defaultdict
 from functools import lru_cache
 from typing import List, Union, Dict, Tuple, Collection
@@ -457,10 +458,14 @@ def adjacency_list(fasta_file_path:str, k:int=3, prefixes:Union[str, None]=None,
     return result
 
 
-def read_fasta(fasta_file_path:str):
+def read_fasta(fasta_file_path:str, without_id=False):
+    # TODO: add docs and tests
     result = []
     for id, string in fasta_file_iter(fasta_file_path):
-        result.append((id, string))
+        if without_id:
+            result.append(string)
+        else:
+            result.append((id, string))
     return result
 
 
@@ -581,7 +586,6 @@ def kmers_composition(dna: str, k: int, alphabet: str = "ACGT"):
     >>> list(result)
     [2, 1, 0, 0]
     """
-    print(list(string_to_kmers(dna, k)))
     dna = Counter(string_to_kmers(dna, k))
     for k_mer in enumerate_kmers(alphabet, k):
         yield dna[k_mer]
@@ -598,4 +602,30 @@ def count_kmers(dna: str, k: int, alphabet: str = "ACGT"):
     result = []
     for k_mer in enumerate_kmers(alphabet, k):
         result.append(c[k_mer])
+    return result
+
+
+def distance_matrix(dnas: Collection[str], metric=hamming_distance, relative=True, as_ndarray=False):
+    """ computes matrix distance for string in dnas
+    :param dnas: collection of strings
+    :param metric: function to calculate distance between two strings
+    :param relative: if true distance will be return in 0.0..1.0 interval,
+        every item will be divided by size of the biggest string
+    :param as_ndarray: if true result will be return as numpy.ndarray
+    :return: matrix nxn (where n is length of dnas) where result[i][j] = metric(dnas[i], dnas[j]), possible devided by
+        strings size.
+    >>> dnas = ["ATTA", "ATTC", "ATTA"]
+    >>> distance_matrix(dnas, relative=False)
+    [[0, 1, 0], [1, 0, 1], [0, 1, 0]]
+    """
+    n = len(dnas)
+    result = [[0] * n for _ in range(n)]
+    for pair in itertools.combinations(zip(range(n), dnas), r=2):
+        (idx1, dna1), (idx2, dna2) = pair
+        distance = metric(dna1, dna2)
+        distance = distance / max(len(dna1), len(dna2)) if relative else distance
+        result[idx1][idx2] = distance
+        result[idx2][idx1] = distance
+    if as_ndarray:
+        result = np.asarray(result)
     return result

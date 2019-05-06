@@ -25,11 +25,7 @@ def read_file():
 
 
 if __name__ == '__main__':
-    reader = read_file()
-    n = int(next(reader))
-    sets = Sets(n)
-    with open("data/answer.txt", "w") as output:
-        for line in reader:
-            a, b = map(int, line.split())
-            sets.unite(a - 1, b - 1)
-        print(sets.n_disjoint - 1, file=output)
+    data = read_fasta("data/rosalind_data.txt", without_id=True)
+    result = distance_matrix(data)
+    for r in result:
+        print(*r)
