@@ -3,9 +3,10 @@ class Sets:
     Implement as an array size n, where:
         0..i..n - elements of sets,
         array[i] - id of set contains element i
+        if array[i] == i then this element is a root
     Supported operations:
         find - return set (the biggest one), current element belongs to
-        unite - unite to sets, passed elements belongs to
+        unite(a, b) - unite two sets: a and b
     Fields:
         parents: list - array with ids of parents
         n_disjoint: int - number of disjoint sets in system
