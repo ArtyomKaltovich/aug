@@ -231,3 +231,12 @@ def test_distance_matrix_ndarray():
     dnas = ["TTTCCATTTA", "GATTCATTTC", "TTTCCATTTT", "GTTCCATTTA"]
     expected = np.asarray([[0, 0.4, 0.1, 0.1], [0.4, 0, 0.4, 0.3], [0.1, 0.4, 0, 0.2], [0.1, 0.3, 0.2, 0]])
     np.testing.assert_array_equal(expected, distance_matrix(dnas, as_ndarray=True))
+
+
+def test_failure_array():
+    dna = "ACACAC"
+    expected = [0, 0, 1, 2, 3, 4]
+    assert expected == failure_array(dna)
+    dna = "ACGTACGACGTATT"
+    expected = [0, 0, 0, 0, 1, 2, 3, 1, 2, 3, 4, 5, 0, 0]
+    assert expected == failure_array(dna)

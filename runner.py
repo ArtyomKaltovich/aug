@@ -2,6 +2,7 @@ from utils import *
 from Sets import Sets
 from time import perf_counter
 import math
+from scipy.special import comb
 
 def read_digits():
     with open("data/rosalind_data.txt", "r") as f:
@@ -12,9 +13,9 @@ def read_digits():
 
 def for_fasta():
     for id, string in fasta_file_iter("data/rosalind_data.txt"):
-        result = find_reverse_palindromes(string, zero_based=False)
-    for r in result:
-        print(*r)
+        result = failure_array(string)
+    #for r in result:
+    print(*result)
 
 
 def read_file():
@@ -25,7 +26,6 @@ def read_file():
 
 
 if __name__ == '__main__':
-    data = read_fasta("data/rosalind_data.txt", without_id=True)
-    result = distance_matrix(data)
-    for r in result:
-        print(*r)
+    #file=open("data/answer.txt", "w")
+    #data = read_fasta("data/rosalind_data.txt", without_id=True)
+

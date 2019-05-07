@@ -633,3 +633,23 @@ def distance_matrix(dnas: Collection[str], metric=hamming_distance, relative=Tru
     if as_ndarray:
         result = np.asarray(result)
     return result
+
+
+def failure_array(dna: str) -> List[int]:
+    """ The failure array of a string is an array P of length n for which P[k] is the length
+        of the longest substring s[j:k] that is equal to some prefix s[0:k−j], where j cannot equal 1
+        (otherwise, P[k] would always equal k). By convention, P[0]=0.
+    :param dna: string to compute failure array from
+    :return: computed failure array
+    >>> failure_array("CAGCATGGTATCACAGCAGAG")
+    [0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 1, 2, 3, 4, 5, 3, 0, 0]
+    >>> failure_array("AAAAA")
+    [0, 1, 2, 3, 4]
+    """
+    result = [0] * len(dna)
+    for i in range(1, len(dna)):
+        for prev in range(result[i - 1], -1, -1):
+            if dna[:prev + 1] == dna[i - prev:i + 1]:
+                result[i] = prev + 1
+                break
+    return result
