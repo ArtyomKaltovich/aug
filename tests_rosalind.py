@@ -52,6 +52,14 @@ def test_read_fasta():
 
 
 @pytest.mark.skip("file operations")
+def test_read_fasta_without_id():
+    expected = [("CCTGCGGAAGATCGGCACTAGAATAGCCAGAACCGTTTCTCTGAGGCTTCCGGCCTTCCCTCCCACTAATAATTCTGAGG"),
+                ("CCATCGGTAGCGCATCCTTAGTCCAATTAAGTCCCTATCCAGGCGCTCCGCCGAAGGTCTATATCCATTTGTCAGCAGACACGC"),
+                ("CCACCCTCGTGGTATGGCTAGGCATTCAGGAACCGGAGAACGCTTCAGACCAGCCCGGACTGGGAACCTGCGGGCAGTAGGTGGAAT")]
+    assert expected == read_fasta(r"data/test_fasta.txt", without_id=True)
+
+
+@pytest.mark.skip("file operations")
 def test_fasta_file_do_max():
     id_max = None
     gc_max = None

@@ -459,7 +459,11 @@ def adjacency_list(fasta_file_path:str, k:int=3, prefixes:Union[str, None]=None,
 
 
 def read_fasta(fasta_file_path:str, without_id=False):
-    # TODO: add docs and tests
+    """ read full content of fasta file and return it as a list
+    :param fasta_file_path: path to file to read
+    :param without_id: if true ids of strings will be omitted
+    :return:
+    """
     result = []
     for id, string in fasta_file_iter(fasta_file_path):
         if without_id:
