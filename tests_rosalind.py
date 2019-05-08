@@ -262,3 +262,11 @@ def test_n_expected_dominant_phenotype():
     assert 0 == n_expected_dominant_phenotype([0, 0, 0, 0, 0, 1])
     assert 5 == n_expected_dominant_phenotype([1, 0, 0, 0, 0, 0], n_children=5)
     assert 7.5 == n_expected_dominant_phenotype([0, 0, 0, 10, 0, 0])
+
+
+def test_gen_substrings():
+    actual = list(gen_substrings("DNA", 3))
+    expected = [ "D", "DD", "DDD", "DDN", "DDA", "DN", "DND", "DNN", "DNA", "DA", "DAD", "DAN", "DAA",
+                 "N", "ND", "NDD", "NDN", "NDA", "NN", "NND", "NNN", "NNA", "NA", "NAD", "NAN", "NAA",
+                 "A", "AD", "ADD", "ADN", "ADA", "AN", "AND", "ANN", "ANA", "AA", "AAD", "AAN", "AAA"]
+    assert actual == expected

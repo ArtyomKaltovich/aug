@@ -26,7 +26,10 @@ def read_file():
 
 
 if __name__ == '__main__':
-    #file=open("data/answer.txt", "w")
+    file=open("data/answer.txt", "w")
     #data = read_fasta("data/rosalind_data.txt", without_id=True)
-    n = read_digits()
-    print(n_expected_dominant_phenotype(n, n_children=2))
+    alphabet, n = read_file()
+    alphabet = alphabet.split()
+    n = int(n)
+    for r in gen_substrings(alphabet, n):
+        print(r, file=open("data/answer.txt", "a"))
