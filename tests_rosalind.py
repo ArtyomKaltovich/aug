@@ -1,5 +1,6 @@
 import pytest
 from utils import *
+from Phenotype import *
 
 FLOAT_EQUALITY_ACCURACY = 0.001
 
@@ -247,3 +248,17 @@ def test_failure_array():
     dna = "ACGTACGACGTATT"
     expected = [0, 0, 0, 0, 1, 2, 3, 1, 2, 3, 4, 5, 0, 0]
     assert expected == failure_array(dna)
+
+
+def test_dominant_phenotype_prob():
+    p = PhenotypeHeredityTable()
+    assert 0.75 == p.dominant_phenotype_prob(("Aa", "Aa"))
+    assert 0.0 == p.dominant_phenotype_prob(("aa", "aa"))
+    assert 0.5 == p.dominant_phenotype_prob(("Aa", "aa"))
+    assert 1.0 == p.dominant_phenotype_prob(("AA", "AA"))
+
+
+def test_n_expected_dominant_phenotype():
+    assert 0 == n_expected_dominant_phenotype([0, 0, 0, 0, 0, 1])
+    assert 5 == n_expected_dominant_phenotype([1, 0, 0, 0, 0, 0], n_children=5)
+    assert 7.5 == n_expected_dominant_phenotype([0, 0, 0, 10, 0, 0])
