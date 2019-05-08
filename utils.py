@@ -1,10 +1,12 @@
 import itertools
 import math
-import numpy as np
+import operator
+import bisect
 from collections import Counter, defaultdict
 from functools import lru_cache
-from typing import List, Union, Dict, Tuple, Collection
+from typing import List, Union, Dict, Tuple, Collection, Callable
 
+import numpy as np
 from scipy.special import comb
 
 complement_map = {"A": "T", "C": "G", "G": "C", "T": "A"}
@@ -52,6 +54,8 @@ monoisotopic_mass_table = {
     "Y":  163.06333,
 }
 
+inverted_monoisotopic_mass = sorted(((value, key) for key, value in monoisotopic_mass_table.items()))
+
 
 def dna_to_rna(dna: str):
     """An RNA string is a string formed from the alphabet containing 'A', 'C', 'G', and 'U'.
@@ -80,12 +84,27 @@ def start_with_the_beggining(rna: str):
     return 0
 
 
-def rna_to_protein(rna: str, to_str=True, start=start_with_the_beggining):
-    """The RNA codon table dictates the details regarding the encoding of specific codons into the amino acid alphabet.
+def rna_to_protein(rna: str, to_str=True, start: Union[int, Callable[[str], int]]=start_with_the_beggining):
+    """ The RNA codon table dictates the details regarding the encoding of specific codons into the amino acid alphabet.
         Given: An RNA string s corresponding to a strand of mRNA (of length at most 10 kbp).
         Return: The protein string encoded by s.
+    :param rna: rna string
+    :param to_str: if true result will be returned as string, if false it will be returned as a list
+    :param start: start position, can be 0-based int or callable, two variants is already defined:
+        * start_with_the_beggining
+        * start_with_start_codon
+    :return: protein sequence
+    >>> seq = "UUUAUGCUUUAA"
+    >>> rna_to_protein(seq)
+    'FML'
+    >>> rna_to_protein(seq, to_str=False)
+    ['F', 'M', 'L']
+    >>> rna_to_protein(seq, start=start_with_start_codon)
+    'ML'
+    >>> rna_to_protein(seq, start=6)
+    'L'
     """
-    pos = start(rna)
+    pos = start(rna) if callable(start) else start
     if pos < 0:
         return None if not to_str else ""
     else:
@@ -653,3 +672,24 @@ def failure_array(dna: str) -> List[int]:
                 result[i] = prev + 1
                 break
     return result
+
+
+def prefix_spectrum(spectrum: List[float]):
+    """ The prefix spectrum of a weighted string is the collection of all its prefix weights.
+    :param spectrum: prefix spectrum
+    :return: protein sequence, with the same prefix sequence.
+        result[i] = aminoacid with the mass equals to spectrum[len(spectrum) - 1] - spectrum[len(spectrum) - 2]
+    >>> prefix_spectrum([3524.8542, 3710.9335, 3841.974, 3970.0326, 4057.0646])
+    'WMQS'
+    """
+    result = []
+    it = iter(spectrum)
+    next(it)
+    m = inverted_monoisotopic_mass
+    for pair in zip(spectrum, it):
+        mass = pair[1] - pair[0]
+        index = bisect.bisect_left(m, (mass, "dummy"))
+        index = index - 1 if index == len(m) or\
+                             index - 1 > 0 and abs(mass - m[index - 1][0]) < abs(mass - m[index][0]) else index
+        result.append(m[index][1])
+    return "".join(result)
