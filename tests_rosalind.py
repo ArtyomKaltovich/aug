@@ -31,6 +31,13 @@ def test_reverse_complement():
     assert expected == reverse_complement(param)
 
 
+def test_all_possible_gene_transcription():
+    string = "AGCCATGTAGCTAACTCAGGTTACATGGGGATGACCCCGCGACTTGGATTAGAGTCTCTTTTGGAATAAGCCTGAATGATCCGAGTAGCATCTCAG"
+    expected = {"MLLGSFRLIPKETLIQVAGSSPCNLS", "M", "MGMTPRLGLESLLE", "MTPRLGLESLLE"}
+    actual = all_possible_gene_transcription(string)
+    assert expected == actual
+
+
 @pytest.mark.skip("file operations")
 def test_fasta_file_do():
     def helper(id, string):

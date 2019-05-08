@@ -13,9 +13,9 @@ def read_digits():
 
 def for_fasta():
     for id, string in fasta_file_iter("data/rosalind_data.txt"):
-        result = failure_array(string)
-    #for r in result:
-    print(*result)
+        result = all_possible_gene_transcription(string)
+    for r in result:
+        print(r, file=open("data/answer.txt", "a"))
 
 
 def read_file():
@@ -28,6 +28,4 @@ def read_file():
 if __name__ == '__main__':
     #file=open("data/answer.txt", "w")
     #data = read_fasta("data/rosalind_data.txt", without_id=True)
-    data = open("data/rosalind_data.txt", "r").readlines()
-    data = list(map(float, data))
-    print(prefix_spectrum(data))
+    for_fasta()

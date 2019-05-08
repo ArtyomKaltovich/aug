@@ -56,7 +56,7 @@ monoisotopic_mass_table = {
 inverted_monoisotopic_mass = sorted(((value, key) for key, value in monoisotopic_mass_table.items()))
 
 
-def dna_to_rna(dna: str):
+def dna_to_rna(dna: str, start=0):
     """An RNA string is a string formed from the alphabet containing 'A', 'C', 'G', and 'U'.
 
     Given a DNA string t corresponding to a coding strand, its transcribed RNA string u is formed by replacing all
@@ -83,7 +83,8 @@ def start_with_the_beggining(rna: str):
     return 0
 
 
-def rna_to_protein(rna: str, to_str=True, start: Union[int, Callable[[str], int]]=start_with_the_beggining):
+def rna_to_protein(rna: str, to_str=True, start: Union[int, Callable[[str], int]]=start_with_the_beggining,
+                   end=False):
     """ The RNA codon table dictates the details regarding the encoding of specific codons into the amino acid alphabet.
         Given: An RNA string s corresponding to a strand of mRNA (of length at most 10 kbp).
         Return: The protein string encoded by s.
@@ -92,6 +93,7 @@ def rna_to_protein(rna: str, to_str=True, start: Union[int, Callable[[str], int]
     :param start: start position, can be 0-based int or callable, two variants is already defined:
         * start_with_the_beggining
         * start_with_start_codon
+    :param end: if True, than sequence should ended on stop codon, if stop codon wasn't found return empty sequence
     :return: protein sequence
     >>> seq = "UUUAUGCUUUAA"
     >>> rna_to_protein(seq)
@@ -116,18 +118,23 @@ def rna_to_protein(rna: str, to_str=True, start: Union[int, Callable[[str], int]
         else:
             result = result[:i]
             break
+    else:
+        # if no break occurs, then stop codon wasn't found, so if end argument is True empty sequence should be returned
+        if end:
+            result = []
     if to_str:
         result = "".join(result)
     return result
 
 
-def dna_to_protein(dna: str):
+def dna_to_protein(dna: str, start: int=0):
     """ Return protein string based on dna string.
         Just a conveyor rna_to_protein(dna_to_rna(dna)), defined for simplifying syntax.
+    :param start: position to start with (skip letters at positions range 0..start)
     :param dna: dna string
     :return: protein string
     """
-    return rna_to_protein(dna_to_rna(dna))
+    return rna_to_protein(dna_to_rna(dna, start), start=start)
 
 
 def gene_to_protein(gene: str, intrones: Union[str, Collection[str]]) -> str:
@@ -142,10 +149,6 @@ def gene_to_protein(gene: str, intrones: Union[str, Collection[str]]) -> str:
     return dna_to_protein(gene)
 
 
-def all_possible_gene_readings(dna: str):
-
-
-
 def reverse_complement(dna: str):
     """The reverse complement of a DNA string s is the string sc formed by reversing the symbols of s,
     then taking the complement of each symbol (e.g., the reverse complement of "GTCA" is "TGAC").
@@ -158,6 +161,23 @@ def reverse_complement(dna: str):
     for index, letter in enumerate(reversed(dna)):
         result[index] = complement_map[letter]
     return "".join(result)
+
+
+def all_possible_gene_transcription(dna: str):
+    """ generator returned all possible gene transcription, started from start codon in any position in the string or
+        its reverse complement
+    :param dna: dna sequence
+    :return: generator for every protein this dna or its reverse complement can form
+    """
+    result = set()
+    for dna in (dna, reverse_complement(dna)):
+        rna = dna_to_rna(dna)
+        start = find_motif(rna, START_CODON)
+        for s in start:
+            r = rna_to_protein(rna, start=s, end=True)
+            if r:
+                result.add(r)
+    return result
 
 
 def fasta_file_iter(path: str):
