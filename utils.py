@@ -1,6 +1,5 @@
 import itertools
 import math
-import operator
 import bisect
 from collections import Counter, defaultdict
 from functools import lru_cache
@@ -141,6 +140,10 @@ def gene_to_protein(gene: str, intrones: Union[str, Collection[str]]) -> str:
     for introne in intrones:
         gene = gene.replace(introne, "")
     return dna_to_protein(gene)
+
+
+def all_possible_gene_readings(dna: str):
+
 
 
 def reverse_complement(dna: str):
