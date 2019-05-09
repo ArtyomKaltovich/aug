@@ -236,3 +236,9 @@ def test_find_protein_motif_by_shorthand():
         KKQGAARAKMEYKCAAPSKEVVLQHVRTERTPQRL"""
     protein = textwrap.dedent(protein).replace("\n", "")
     assert [46, 114, 115, 381, 408] == find_protein_motif_by_shorthand(protein, "N{P}[ST]{P}")
+
+
+def test_transition_transversion_ratio():
+    dna1 = "GCAACGCACAACGAAAACCCTTAGGGACTGGATTATTTCGTGATCGTTGTAGTTATTGGAAGTACGGGCATCAACCCAGTT"
+    dna2 = "TTATCTGACAAAGAAAGCCGTCAACGGCTGGATAATTTCGCGATCGTGCTGGTTACTGGCGGTACGAGTGTTCCTTTGGGT"
+    assert 1.214 == pytest.approx(transition_transversion_ratio(dna1, dna2), FLOAT_EQUALITY_ACCURACY)

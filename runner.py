@@ -1,4 +1,5 @@
 from aug.comb.comb import gen_substrings
+from aug.data.fasta import *
 from aug.data.net import request_protein_sequence
 from aug.seq.seq import *
 
@@ -25,11 +26,7 @@ def read_file():
 
 
 if __name__ == '__main__':
-    file=open("data/answer.txt", "w")
-    #data = read_fasta("data/rosalind_data.txt", without_id=True)
-    for id in read_file():
-        _, sequence = request_protein_sequence(id)
-        result = find_protein_motif_by_shorthand(sequence, "N{P}[ST]{P}")
-        if result:
-            print(id)
-            print(*one_based_helper(result))
+    #file=open("data/answer.txt", "w")
+    data = read_fasta("data/rosalind_data.txt", without_id=True)
+    print(transition_transversion_ratio(*data))
+

@@ -674,6 +674,39 @@ def _convert_protein_shorthand_into_regex(shorthand: str):
     >>> _convert_protein_shorthand_into_regex("ABC")
     'ABC'
     >>> _convert_protein_shorthand_into_regex("N{P}[ST]{P}")
-    'N^P[ST]^P'
+    'N[^P][ST][^P]'
     """
     return shorthand.replace("{", "[^").replace("}", "]")
+
+
+def transition_transversion(dna1: str, dna2: str):
+    """ returns transition/transversion number between dna1 and dna2.
+    Point mutations occurring in DNA can be divided into two types: transitions and transversions.
+        A transition substitutes one purine for another (A↔G) or one pyrimidine for another (C↔T);
+        that is, a transition does not change the structure of the nucleobase.
+        Conversely, a transversion is the interchange of a purine for a pyrimidine base, or vice-versa.
+        see http://rosalind.info/media/problems/tran/transitions-transversions.png
+    :return: tuple (transition, transversion)
+    >>> transition_transversion("ACGT", "AAGC")
+    (1, 1)
+    """
+    transition = 0
+    transversion = 0
+    for a, b in zip(dna1, dna2):
+        if a != b:
+            if a == "A" and b == "G" or a == "C" and b == "T"\
+                    or a == "G" and b == "A" or a == "T" and b == "C":
+                transition += 1
+            else:
+                transversion += 1
+    return transition, transversion
+
+
+def transition_transversion_ratio(dna1: str, dna2: str):
+    """ returns transition/transversion ratio between dna1 and dna2
+    :return: transition/transversion ratio
+    >>> transition_transversion_ratio("ACGT", "AAGC")
+    1.0
+    """
+    transition, transversion = transition_transversion(dna1, dna2)
+    return transition / transversion
