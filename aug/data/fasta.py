@@ -17,10 +17,11 @@ def parse_fasta_string(string):
     """ parse one fasta record
     :param string: fasta record in string format (id should start with > and end with \n)
     :return: id and sequence
-    >>> list(parse_fasta_string(">id\\nAUG"))
-    [('id', 'AUG')]
+    >>> parse_fasta_string(">id\\nAUG")
+    ('id', 'AUG')
     """
-    yield from _fasta_structure_iter(string.splitlines())
+    for r in _fasta_structure_iter(string.splitlines()):
+        return r
 
 
 def _fasta_structure_iter(file):

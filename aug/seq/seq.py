@@ -1,6 +1,7 @@
 import itertools
 import math
 import bisect
+import re
 from collections import Counter, defaultdict
 from functools import lru_cache
 from typing import List, Union, Dict, Tuple, Collection, Callable
@@ -9,7 +10,6 @@ import numpy as np
 from scipy.special import comb
 
 from aug.data.fasta import fasta_file_iter
-from aug.heredity.Phenotype import PhenotypeHeredityTable
 
 complement_map = {"A": "T", "C": "G", "G": "C", "T": "A"}
 START_CODON = "AUG"
@@ -223,6 +223,10 @@ def find_motif(dna:str, motif: str, zero_based=True):
     return _helper_for_non_zero_based(result, zero_based)
 
 
+def one_based_helper(indexes: List):
+    return [i + 1 for i in indexes]
+
+
 def _helper_for_non_zero_based(indexes: List, zero_based: bool):
     """ Transform indexes based on zero_based.
     :param indexes: list to transform
@@ -230,7 +234,7 @@ def _helper_for_non_zero_based(indexes: List, zero_based: bool):
     :return: list of indexes transformed accordingly to zero_based
     """
     if not zero_based:
-        return [i + 1 for i in indexes]
+        return one_based_helper(indexes)
     else:
         return indexes
 
@@ -648,45 +652,28 @@ def prefix_spectrum(spectrum: List[float]):
     return "".join(result)
 
 
-def n_expected_dominant_phenotype(n_parents, n_children=1):
-    """
-    :param n_parents:
-    :param n_children:
-    :return:
-    >>> n_expected_dominant_phenotype([1, 0, 0, 1, 0, 1], n_children=2)
-    3.5
-    """
-    assert 6 == len(n_parents)
-    result = 0
-    phenotype = PhenotypeHeredityTable()
-    for n, pair in zip(n_parents, (("AA", "AA"), ("AA", "Aa"), ("AA", "aa"), ("Aa", "Aa"), ("Aa", "aa"), ("aa", "aa"))):
-        result += n * phenotype.dominant_phenotype_prob(pair) * n_children
+def find_protein_motif_by_shorthand(protein: str, shorthand: str):
+    shorthand = _convert_protein_shorthand_into_regex(shorthand)
+    shorthand = re.compile(shorthand)
+    result = []
+    match = shorthand.finditer(protein)
+    try:
+        while True:
+            pos = next(match).start()
+            result.append(pos)
+            match = shorthand.finditer(protein, pos + 1)
+    except StopIteration:
+        pass
     return result
 
 
-def gen_substrings(alphabet: str, n: int):
+def _convert_protein_shorthand_into_regex(shorthand: str):
     """
-    :param alphabet:
-    :param n:
+    :param shorthand:
     :return:
-    >>> list(gen_substrings("DNA", 2))
-    ['D', 'DD', 'DN', 'DA', 'N', 'ND', 'NN', 'NA', 'A', 'AD', 'AN', 'AA']
+    >>> _convert_protein_shorthand_into_regex("ABC")
+    'ABC'
+    >>> _convert_protein_shorthand_into_regex("N{P}[ST]{P}")
+    'N^P[ST]^P'
     """
-    n = n - 1
-    d = [0]
-    result = [alphabet[0]]
-    while d:
-        yield "".join(result)
-        if len(d) <= n:
-            d.append(0)
-            result.append(alphabet[0])
-        elif d[-1] < len(alphabet) - 1:
-            d[-1] += 1
-            result[-1] = alphabet[d[-1]]
-        elif d:
-            while d and d[-1] >= len(alphabet) - 1:
-                d.pop()
-                result.pop()
-            if d:
-                d[-1] += 1
-                result[-1] = alphabet[d[-1]]
+    return shorthand.replace("{", "[^").replace("}", "]")

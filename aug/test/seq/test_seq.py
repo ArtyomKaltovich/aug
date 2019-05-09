@@ -1,9 +1,12 @@
+import textwrap
+
 import pytest
 
-from aug.seq.seq import adjacency_list
-from aug.test import FLOAT_EQUALITY_ACCURACY
-from aug.seq.seq import *
+from aug.comb.comb import gen_substrings
 from aug.heredity.Phenotype import *
+from aug.heredity.heredity import n_expected_dominant_phenotype
+from aug.seq.seq import *
+from aug.test import FLOAT_EQUALITY_ACCURACY
 
 
 def test_dna_to_rna():
@@ -217,3 +220,19 @@ def test_adjacency_list():
     assert len(expected) == len(actual)
     for val in expected:
         assert val in actual
+
+
+def test_find_protein_motif_by_shorthand():
+    protein = """
+        MLGVLVLGALALAGLGFPAPAEPQPGGSQCVEHDCFALYPGPATFLNASQICDGLRGHLM
+        TVRSSVAADVISLLLNGDGGVGRRRLWIGLQLPPGCGDPKRLGPLRGFQWVTGDNNTSYS
+        RWARLDLNGAPLCGPLCVAVSAAEATVPSEPIWEEQQCEVKADGFLCEFHFPATCRPLAV
+        EPGAAAAAVSITYGTPFAARGADFQALPVGSSAAVAPLGLQLMCTAPPGAVQGHWAREAP
+        GAWDCSVENGGCEHACNAIPGAPRCQCPAGAALQADGRSCTASATQSCNDLCEHFCVPNP
+        DQPGSYSCMCETGYRLAADQHRCEDVDDCILEPSPCPQRCVNTQGGFECHCYPNYDLVDG
+        ECVEPVDPCFRANCEYQCQPLNQTSYLCVCAEGFAPIPHEPHRCQMFCNQTACPADCDPN
+        TQASCECPEGYILDDGFICTDIDECENGGFCSGVCHNLPGTFECICGPDSALARHIGTDC
+        DSGKVDGGDSGSGEPPPSPTPGSTLTPPAVGLVHSGLLIGISIASLCLVVALLALLCHLR
+        KKQGAARAKMEYKCAAPSKEVVLQHVRTERTPQRL"""
+    protein = textwrap.dedent(protein).replace("\n", "")
+    assert [46, 114, 115, 381, 408] == find_protein_motif_by_shorthand(protein, "N{P}[ST]{P}")
