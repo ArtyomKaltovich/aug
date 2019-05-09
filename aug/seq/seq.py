@@ -8,7 +8,7 @@ from typing import List, Union, Dict, Tuple, Collection, Callable
 import numpy as np
 from scipy.special import comb
 
-from Phenotype import PhenotypeHeredityTable
+from aug.heredity.Phenotype import PhenotypeHeredityTable
 
 complement_map = {"A": "T", "C": "G", "G": "C", "T": "A"}
 START_CODON = "AUG"

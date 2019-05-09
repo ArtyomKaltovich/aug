@@ -1,8 +1,5 @@
-from utils import *
-from Sets import Sets
-from time import perf_counter
-import math
-from scipy.special import comb
+from aug.seq.seq import *
+
 
 def read_digits():
     with open("data/rosalind_data.txt", "r") as f:

@@ -1,6 +1,6 @@
 import pytest
-from utils import *
-from Phenotype import *
+from aug.seq.seq import *
+from aug.heredity.Phenotype import *
 
 FLOAT_EQUALITY_ACCURACY = 0.001
 
