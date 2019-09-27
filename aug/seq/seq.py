@@ -379,7 +379,7 @@ def find_reverse_palindromes(dna: str, min_len: int=4, max_len: int=12, zero_bas
 def bernul(n, k, p):
     """ returns probability of k occurrences in n Bernoulli trial with probability p
         https://en.wikipedia.org/wiki/Bernoulli_trial
-    :param n: number of test
+    :param n: number of tests
     :param k: number of successes
     :param p: probability of every success
     :return: probability of k occurrences in n Bernoulli trial

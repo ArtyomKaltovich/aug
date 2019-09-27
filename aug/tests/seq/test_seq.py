@@ -6,7 +6,7 @@ from aug.comb.comb import gen_substrings
 from aug.heredity.Phenotype import *
 from aug.heredity.heredity import n_expected_dominant_phenotype
 from aug.seq.seq import *
-from aug.test import FLOAT_EQUALITY_ACCURACY
+from aug.tests import FLOAT_EQUALITY_ACCURACY, base_data_path
 
 
 def test_dna_to_rna():
@@ -214,9 +214,9 @@ def test_gen_substrings():
     assert actual == expected
 
 
-def test_adjacency_list():
+def test_adjacency_list(base_data_path):
     expected = [('Rosalind_0498', 'Rosalind_2391'), ('Rosalind_0498', 'Rosalind_0442'), ('Rosalind_2391', 'Rosalind_2323')]
-    actual = adjacency_list("test_data_files/test_adjacency_list.txt", k=3)
+    actual = adjacency_list(base_data_path + "test_data_files/test_adjacency_list.txt", k=3)
     assert len(expected) == len(actual)
     for val in expected:
         assert val in actual
