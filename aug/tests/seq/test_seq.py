@@ -46,7 +46,7 @@ def test_all_possible_gene_transcription():
 def test_gc_rate():
     param = "CCACCCTCGTGGTATGGCTAGGCATTCAGGAACCGGAGAACGCTTCAGACCAGCCCGGACTGGGAACCTGCGGGCAGTAGGTGGAAT"
     expected = 60.9195
-    assert expected == pytest.approx(gc_rate(param, procent=True), FLOAT_EQUALITY_ACCURACY)
+    assert expected == pytest.approx(gc_rate(param, percent=True), FLOAT_EQUALITY_ACCURACY)
 
 
 def test_hamming_distance():

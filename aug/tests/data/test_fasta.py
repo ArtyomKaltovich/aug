@@ -36,7 +36,7 @@ def test_fasta_file_do_max(base_data_path):
 
     def helper(id, string):
         nonlocal id_max, gc_max
-        gc = gc_rate(string, procent=True)
+        gc = gc_rate(string, percent=True)
         if not gc_max or gc > gc_max:
             id_max = id
             gc_max = gc

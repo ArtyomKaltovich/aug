@@ -183,13 +183,14 @@ def all_possible_gene_transcription(dna: str):
     return result
 
 
-def gc_rate(dna: str, procent=False):
+def gc_rate(dna: str, percent=False):
     """ returns rate for G and C in dna
-    :param procent:
+    :param dna: dna as a string
+    :param percent: set to True if you want return result as a procent [0, 100], of false as an [0, 1] ratio.
     """
     c = Counter(dna)
     result = (c["G"] + c["C"]) / len(dna)
-    return result * 100 if procent else result
+    return result * 100 if percent else result
 
 
 def hamming_distance(p, q):
@@ -296,6 +297,7 @@ def profile(dna: Union[list, tuple, str], update: Union[list, None]=None) -> dic
     """
     Function takes a list of strings DNA as input and returns the profile matrix (as a dictionary of lists).
     :param dna: a list of strings (or just one string) which represent a genome part
+    :param update: a dict to update values (e.g. for separated calculations), None to generate new dict
     :return: dictionary where keys are A, C, G, T and values are list with their occurrences in patterns
         on that index.
     :example:
