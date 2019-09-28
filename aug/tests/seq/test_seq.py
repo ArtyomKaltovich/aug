@@ -1,3 +1,4 @@
+import random
 import textwrap
 
 import pytest
@@ -7,6 +8,7 @@ from aug.heredity.Phenotype import *
 from aug.heredity.heredity import n_expected_dominant_phenotype
 from aug.seq.seq import *
 from aug.tests import FLOAT_EQUALITY_ACCURACY, base_data_path
+from aug.tests.utils import random_string
 
 
 def test_dna_to_rna():
@@ -145,11 +147,40 @@ def test_find_spliced_motif_non_found():
     assert -1 == find_spliced_motif(dna, motif, zero_based=False)
 
 
+def test_align_empty(random_seed):
+    string = random_string()
+    assert ((string, "-" * len(string)), len(string)) == edit_distance(string, "", reconstract_answer=True)
+    assert (("-" * len(string), string), len(string)) == edit_distance("", string, reconstract_answer=True)
+
+
+def test_align_random_strings(random_seed):
+    string1 = random_string()
+    string2 = random_string()
+    (alignment1, alignment2), score = edit_distance(string1, string2, reconstract_answer=True)
+    substring1 = random.choice([a for a in alignment1.split("-") if a])
+    assert substring1 in string1
+    substring2 = random.choice([a for a in alignment2.split("-") if a])
+    assert substring2 in string2
+
+
 def test_edit_distance():
     assert 0 == edit_distance("ab", "ab")
     assert 2 == edit_distance("", "ab")
     assert 3 == edit_distance("short", "ports")
     assert 5 == edit_distance("editing", "distance")
+
+
+@pytest.mark.parametrize("seq1, seq2, alignment1, alignment2, score",
+                         [["ab", "ab", "ab", "ab", 0],
+                          ["editing", "distance", "edi-tin-g", "-distance", 5],
+                          ["banana", "ananas", "banana-", "-ananas", 2],
+                          ["ananas", "banana", "-ananas", "banana-", 2],
+                          ["ananas", "anna", "ananas", "an-na-", 2],
+                          ["bamboo", "baobab", "bamboo", "baobab", 3],
+                          ["zzzbamboo", "baobab", "zzzbamboo", "---baobab", 6],
+                          ])
+def test_edit_distance_restore_answer(seq1, seq2, alignment1, alignment2, score):
+    assert ((alignment1, alignment2), score) == edit_distance(seq1, seq2, reconstract_answer=True)
 
 
 def test_enumerate_kmers():
