@@ -12,8 +12,14 @@ def read_digits():
 
 
 def for_fasta():
-    for id, string in fasta_file_iter("data/rosalind_data.txt"):
-        result = all_possible_gene_transcription(string)
+    result = []
+    for id, string in fasta_file_iter("data/ERR1074499_FASTQ.fasta"):
+        for n in range(40, 60):
+            #result = all_possible_gene_transcription(string)
+            if string[:n] == string[-n:]:
+                result.append(string)
+                print(string, len(string))
+                break
     for r in result:
         print(r, file=open("data/answer.txt", "a"))
 
@@ -27,6 +33,6 @@ def read_file():
 
 if __name__ == '__main__':
     #file=open("data/answer.txt", "w")
-    data = read_fasta("data/rosalind_data.txt", without_id=True)
-    print(transition_transversion_ratio(*data))
-
+    #data = read_fasta("data/rosalind_data.txt", without_id=True)
+    #print(transition_transversion_ratio(*data))
+    for_fasta()

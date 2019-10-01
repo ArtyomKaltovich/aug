@@ -110,12 +110,13 @@ def test_dominant_probability():
 
 
 def test_consensus():
-    data = ["ATCCAGCT","GGGCAACT","ATGGATCT","AAGCAACC","TTGGAACT","ATGCCATT","ATGGCACT",]
+    data = ["ATCCAGCT", "GGGCAACT", "ATGGATCT", "AAGCAACC", "TTGGAACT", "ATGCCATT", "ATGGCACT", ]
     assert "ATGCAACT" == consensus(data)
 
 
 def test_consensus_precalculated():
-    data = {'A': [5, 1, 0, 0, 5, 5, 0, 0], 'C': [0, 0, 1, 4, 2, 0, 6, 1], 'G': [1, 1, 6, 3, 0, 1, 0, 0], 'T': [1, 5, 0, 0, 0, 1, 1, 6]}
+    data = {'A': [5, 1, 0, 0, 5, 5, 0, 0], 'C': [0, 0, 1, 4, 2, 0, 6, 1], 'G': [1, 1, 6, 3, 0, 1, 0, 0],
+            'T': [1, 5, 0, 0, 0, 1, 1, 6]}
     assert "ATGCAACT" == consensus(precalculated_profile=data)
 
 
@@ -147,16 +148,31 @@ def test_find_spliced_motif_non_found():
     assert -1 == find_spliced_motif(dna, motif, zero_based=False)
 
 
-def test_align_empty(random_seed):
+@pytest.mark.parametrize("method, score_coef, score_delta",
+                         [[alignments.Levinshtein(), 1, 0],
+                          [alignments.NeedlemanWunsch(), -1, 0],
+                          [alignments.NeedlemanWunsch(gap_start=10), -1, 10],
+                          [alignments.NeedlemanWunsch(gap_start=-10), -1, -10]])
+def test_align_empty(random_seed, method, score_coef, score_delta):
     string = random_string()
-    assert ((string, "-" * len(string)), len(string)) == edit_distance(string, "", reconstract_answer=True)
-    assert (("-" * len(string), string), len(string)) == edit_distance("", string, reconstract_answer=True)
+    score = score_coef * len(string) + score_delta
+    assert align(string, "", reconstruct_answer=True, method=method, swap_case_on_mismatch=False) == \
+                ((string, "-" * len(string)), score)
+    assert align("", string, reconstruct_answer=True, method=method, swap_case_on_mismatch=False) == \
+                (("-" * len(string), string), score)
 
 
-def test_align_random_strings(random_seed):
-    string1 = random_string()
-    string2 = random_string()
-    (alignment1, alignment2), score = edit_distance(string1, string2, reconstract_answer=True)
+@pytest.mark.parametrize("method",
+                         [alignments.Levinshtein(),
+                          alignments.NeedlemanWunsch(),
+                          alignments.NeedlemanWunsch(gap_start=10),
+                          alignments.NeedlemanWunsch(gap_start=-10)])
+def test_align_random_strings(random_seed, method):
+    # seq part between two gaps should be presented in the seq.
+    string1 = random_string(min_len=5)
+    string2 = random_string(min_len=5)
+    (alignment1, alignment2), score = align(string1, string2, reconstruct_answer=True, method=method,
+                                            swap_case_on_mismatch=False)
     substring1 = random.choice([a for a in alignment1.split("-") if a])
     assert substring1 in string1
     substring2 = random.choice([a for a in alignment2.split("-") if a])
@@ -180,7 +196,56 @@ def test_edit_distance():
                           ["zzzbamboo", "baobab", "zzzbamboo", "---baobab", 6],
                           ])
 def test_edit_distance_restore_answer(seq1, seq2, alignment1, alignment2, score):
-    assert ((alignment1, alignment2), score) == edit_distance(seq1, seq2, reconstract_answer=True)
+    assert edit_distance(seq1, seq2, reconstruct_answer=True, swap_case_on_mismatch=False) \
+           == ((alignment1, alignment2), score)
+
+
+def test_align_needleman_wunsch_as_edit_distance(random_seed):
+    # test that Needleman Wunsch works the same as edit distance with the same scores.
+    string1 = random_string()
+    string2 = random_string()
+    (expected1, expected2), _ = edit_distance(string1, string2, reconstruct_answer=True,
+                                              swap_case_on_mismatch=False)
+    method = alignments.NeedlemanWunsch(match_score=0, mismatch_score=-1, gap_score=-1)
+    (actual1, actual2), _ = align(string1, string2, reconstruct_answer=True, method=method, swap_case_on_mismatch=False)
+    assert (expected1, expected2) == (actual1, actual2)
+
+
+@pytest.mark.parametrize("seq1, seq2",
+                         [["axc", "aabcc"],
+                          ["MGTSADNALAESFNSALKREVLQDRKVFDNHLVCRREVFYWCTRYNTHRLHTWCGYLSPDDYEAAA",
+                           "MLKREVLRDRKVFGNPIACRQEVFRWCMRYNTHRRHSWCNLVAPDVFETETSATLTKAT"],
+                          ["MLQTPCPQSGVRVPLAESFNSALKREVLQDRKVFDNHLVCRREVFYWCTRYNTHRLHTWCGYLSPDDYEAAA",
+                           "MKREVLQDAACWPDEATCRRQVFRWAVRYNTRRRHSWCGYLSPSTYEARWAATLPTAA"],
+                          ["MKREVLQDAACWPDEATCRRQVFRWAVRYNTRRRHSWCGYLSPSTYEARWAATLPTAA",
+                           "MLKREVLRDRKVFGNPIACRQEVFRWCMRYNTHRRHSWCNLVAPDVFETETSATLTKAT"]])
+def test_align_affine_gap(seq1, seq2):
+    #  with big penalty for opening gap les gap should be presented
+    method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=1)
+    (more_gaps1, more_gaps2), _ = align(seq1, seq2, reconstruct_answer=True, method=method)
+    method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=-10)
+    (less_gaps1, less_gaps2), _ = align(seq1, seq2, reconstruct_answer=True, method=method)
+    assert len(more_gaps1.split("-")) >= len(less_gaps1.split("-"))
+    assert len(more_gaps2.split("-")) >= len(less_gaps2.split("-"))
+
+
+def test_needleman_wunsh_by_hamming_distance_random_strings(random_seed):
+    seq1 = random_string()
+    seq2 = random_string()
+    method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1)
+    (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method, swap_case_on_mismatch=False)
+    assert score == len(line1) - 2 * hamming_distance(line1, line2), (seq1, seq2)
+
+def test_needleman_wunsh_affine_gap():
+    method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=-10)
+    (line1, line2), score = align("axc", "aabcc", reconstruct_answer=True, method=method)
+    assert (('a--xc', 'aABCc'), -11) == ((line1, line2), score)
+    method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=1)
+    (line1, line2), score = align("axc", "aabcc", reconstruct_answer=True, method=method)
+    assert (('-a-x-c', 'AaB-Cc'), 2) == ((line1, line2), score)
+    method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=2)
+    (line1, line2), score = align("axc", "aabcc", reconstruct_answer=True, method=method)
+    assert (('-a-x-c-', 'A-A-BcC'), 7) == ((line1, line2), score)
 
 
 def test_enumerate_kmers():
@@ -239,14 +304,15 @@ def test_n_expected_dominant_phenotype():
 
 def test_gen_substrings():
     actual = list(gen_substrings("DNA", 3))
-    expected = [ "D", "DD", "DDD", "DDN", "DDA", "DN", "DND", "DNN", "DNA", "DA", "DAD", "DAN", "DAA",
-                 "N", "ND", "NDD", "NDN", "NDA", "NN", "NND", "NNN", "NNA", "NA", "NAD", "NAN", "NAA",
-                 "A", "AD", "ADD", "ADN", "ADA", "AN", "AND", "ANN", "ANA", "AA", "AAD", "AAN", "AAA"]
+    expected = ["D", "DD", "DDD", "DDN", "DDA", "DN", "DND", "DNN", "DNA", "DA", "DAD", "DAN", "DAA",
+                "N", "ND", "NDD", "NDN", "NDA", "NN", "NND", "NNN", "NNA", "NA", "NAD", "NAN", "NAA",
+                "A", "AD", "ADD", "ADN", "ADA", "AN", "AND", "ANN", "ANA", "AA", "AAD", "AAN", "AAA"]
     assert actual == expected
 
 
 def test_adjacency_list(base_data_path):
-    expected = [('Rosalind_0498', 'Rosalind_2391'), ('Rosalind_0498', 'Rosalind_0442'), ('Rosalind_2391', 'Rosalind_2323')]
+    expected = [('Rosalind_0498', 'Rosalind_2391'), ('Rosalind_0498', 'Rosalind_0442'),
+                ('Rosalind_2391', 'Rosalind_2323')]
     actual = adjacency_list(base_data_path + "test_data_files/test_adjacency_list.txt", k=3)
     assert len(expected) == len(actual)
     for val in expected:

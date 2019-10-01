@@ -2,7 +2,6 @@ import itertools
 import math
 import bisect
 import re
-from abc import abstractmethod
 from collections import Counter, defaultdict
 from functools import lru_cache
 from typing import List, Union, Dict, Tuple, Collection, Callable
@@ -11,6 +10,7 @@ import numpy as np
 from scipy.special import comb
 
 from aug.data.fasta import fasta_file_iter
+from aug.seq import alignments
 
 complement_map = {"A": "T", "C": "G", "G": "C", "T": "A"}
 START_CODON = "AUG"
@@ -506,79 +506,38 @@ def find_spliced_motif(dna: str, motif: str, zero_based=True) -> Union[List[int]
     return _helper_for_non_zero_based(result, zero_based)
 
 
-class BaseAlignment:
-    def init(self, distances):
-        pass
-
-    @abstractmethod
-    def distance(self, seq1, seq2, distances, i, j):
-        pass
-
-    def reconstract_answer(self, seq1, seq2, distance):
-        result1 = []
-        result2 = []
-        i = len(distance) - 1
-        j = len(distance[0]) - 1
-        while i and j:
-            i_minus_1 = i - 1
-            j_minus_1 = j - 1
-            if distance[i_minus_1][j_minus_1] >= distance[i_minus_1][j] and distance[i_minus_1][j_minus_1] >= distance[i][j_minus_1]:
-                result1.append(seq1[j_minus_1])
-                result2.append(seq2[i_minus_1])
-                i = i_minus_1
-                j = j_minus_1
-            elif distance[i][j_minus_1] >= distance[i_minus_1][j] and distance[i][j_minus_1] >= distance[i_minus_1][j_minus_1]:
-                result1.append(seq1[j_minus_1])
-                result2.append("-")
-                j = j_minus_1
-            elif distance[i_minus_1][j] >= distance[i][j_minus_1] and distance[i_minus_1][j] >= distance[i_minus_1][j_minus_1]:
-                result1.append("-")
-                result2.append(seq2[i_minus_1])
-                i = i_minus_1
-        while j:
-            j -= 1
-            result1.append(seq1[j])
-            result2.append("-")
-        while i:
-            i -= 1
-            result1.append("-")
-            result2.append(seq2[i])
-        return "".join(reversed(result1)), "".join(reversed(result2))
-
-
-def align(seq1, seq2, reconstract_answer=True, method=BaseAlignment()):
+def align(seq1, seq2, reconstruct_answer=True, method=None, swap_case_on_mismatch=True):
     """ align two sequences
     :param seq1:
     :param seq2:
     :return:
+    >>> method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=-10)
+    >>> align("AXC", "AABCC", reconstruct_answer=True, method=method)
+    (('A--XC', 'AabcC'), -11)
+    >>> method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=1)
+    >>> align("AXC", "AABCC", reconstruct_answer=True, method=method)
+    (('-A-X-C', 'aAb-cC'), 2)
     """
-    distances = [[0] * (len(seq1) + 1) for _ in range(len(seq2) + 1)]
-    method.init(distances)
+    method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=1) \
+        if method is None else method
+    distances = method.init_distance_matrix(seq1, seq2)
     for i, j in itertools.product(list(range(1, len(seq2) + 1)), list(range(1, len(seq1) + 1))):
-        distances[i][j] = method.distance(seq1, seq2, distances, i, j)
-    if reconstract_answer:
-        return method.reconstract_answer(seq1, seq2, distances), -distances[-1][-1]
+        method.calculate_distance(seq1, seq2, distances, i, j)
+    score = method.score(distances)
+    if reconstruct_answer:
+        return method.reconstruct_answer(seq1, seq2, distances, swap_case_on_mismatch), score
     else:
-        return -distances[-1][-1]
+        return score
 
 
-class LevinshteinAlignment(BaseAlignment):
-    def init(self, distances):
-        distances[0] = [-x for x in range(len(distances[0]))]
-        for x in range(len(distances)):
-            distances[x][0] = -x
-
-    def distance(self, seq1, seq2, distances, i, j):
-        return max(distances[i - 1][j] - 1, distances[i][j - 1] - 1,
-                   distances[i - 1][j - 1] - (seq2[i - 1] != seq1[j - 1]))
-
-
-def edit_distance(str1, str2, reconstract_answer=False, method=LevinshteinAlignment()):
+def edit_distance(str1, str2, reconstruct_answer=False, method=alignments.Levinshtein(),
+                  swap_case_on_mismatch=True):
     """ Calculate editing distance between two strings.
     >>> edit_distance("editing", "distance")
     5
     """
-    return align(str1, str2, reconstract_answer, method)
+    method = alignments.Levinshtein() if method is None else method
+    return align(str1, str2, reconstruct_answer, method, swap_case_on_mismatch)
 
 
 def enumerate_kmers(alphabet: Union[str, List[str]], length: int):
