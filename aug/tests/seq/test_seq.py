@@ -236,6 +236,40 @@ def test_needleman_wunsh_by_hamming_distance_random_strings(random_seed):
     (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method, swap_case_on_mismatch=False)
     assert score == len(line1) - 2 * hamming_distance(line1, line2), (seq1, seq2)
 
+
+def def_test_align_with_distance_matrix():
+    seq1 = "XXXYZ"
+    seq2 = "ЙYXXX"
+
+    dist_matrix = {'X': {'Й': -5, 'Z': -5, 'Y': -5, 'X': 5},
+                   'Y': {'Й': -5, 'Z': -5, 'Y': 5, 'X': -5},
+                   'Z': {'Й': -15, 'Z': 8, 'Y': -5, 'X': -5},
+                   'Й': {'Й': 8, 'Z': -15, 'Y': -5, 'X': -5}}
+
+    method = alignments.NeedlemanWunsch(score_matrix=dist_matrix, gap_score=-10)
+    (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    assert ((line1, line2), score) == (("XXXYZ", "йyXxx"), -15)
+
+    dist_matrix = {'X': {'Й': -5, 'Z': -5, 'Y': -5, 'X': 15},
+                   'Y': {'Й': -5, 'Z': -5, 'Y': -5, 'X': -5},
+                   'Z': {'Й': -15, 'Z': 8, 'Y': -5, 'X': -5},
+                   'Й': {'Й': 8, 'Z': -15, 'Y': -5, 'X': -5}}
+
+    method = alignments.NeedlemanWunsch(score_matrix=dist_matrix, gap_score=-10)
+    (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    assert ((line1, line2), score) == (("--XXXYZ", "йyXXX--"), 5)
+
+
+@pytest.mark.parametrize("name, value", [
+    ["match_score", 10],
+    ["mismatch_score", 10]
+])
+def test_score_matrix_and_mis_match_score_passed_as_param(name, value):
+    kwargs = {name: value}
+    with pytest.raises(ValueError):
+        alignments.NeedlemanWunsch(score_matrix=blosum62, gap_score=-10, **kwargs)
+
+
 def test_needleman_wunsh_affine_gap():
     method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=-10)
     (line1, line2), score = align("axc", "aabcc", reconstruct_answer=True, method=method)

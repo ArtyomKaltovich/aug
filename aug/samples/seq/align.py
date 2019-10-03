@@ -1,4 +1,5 @@
 import random
+from collections import defaultdict
 
 from aug.seq import alignments
 from aug.seq.seq import edit_distance, align, hamming_distance
@@ -43,6 +44,34 @@ def affine_gap_needleman_wunsch_sample():
     print(score)
 
 
+def distance_matrix_sample():
+    seq1 = "XXXYZ"
+    seq2 = "ЙYXXX"
+
+    dist_matrix = {'X': {'Й': -5, 'Z': -5, 'Y': -5, 'X': 5},
+                   'Y': {'Й': -5, 'Z': -5, 'Y': 5, 'X': -5},
+                   'Z': {'Й': -15, 'Z': 8, 'Y': -5, 'X': -5},
+                   'Й': {'Й': 8, 'Z': -15, 'Y': -5, 'X': -5}}
+
+    method = alignments.NeedlemanWunsch(score_matrix=dist_matrix, gap_score=-10)
+    (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    print(line1)
+    print(line2)
+    print(score)
+
+    dist_matrix = {'X': {'Й': -5, 'Z': -5, 'Y': -5, 'X': 15},
+                   'Y': {'Й': -5, 'Z': -5, 'Y': -5, 'X': -5},
+                   'Z': {'Й': -15, 'Z': 8, 'Y': -5, 'X': -5},
+                   'Й': {'Й': 8, 'Z': -15, 'Y': -5, 'X': -5}}
+
+    method = alignments.NeedlemanWunsch(score_matrix=dist_matrix, gap_score=-10)
+    (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    print(line1)
+    print(line2)
+    print(score)
+
+
+
 def test():
     seq1 = "MGTSADNALAESFNSALKREVLQDRKVFDNHLVCRREVFYWCTRYNTHRLHTWCGYLSPDDYEAAA"  # https://www.uniprot.org/uniprot/W5Y845.fasta
     seq2 = "MLQTPCPQSGVRVPLAESFNSALKREVLQDRKVFDNHLVCRREVFYWCTRYNTHRLHTWCGYLSPDDYEAAA"  # https://www.uniprot.org/uniprot/W5Y176.fasta
@@ -68,5 +97,7 @@ def test():
 
 
 if __name__ == '__main__':
-    simple_needleman_wunsch_sample()
-    affine_gap_needleman_wunsch_sample()
+    #simple_needleman_wunsch_sample()
+    #affine_gap_needleman_wunsch_sample()
+    distance_matrix_sample()
+

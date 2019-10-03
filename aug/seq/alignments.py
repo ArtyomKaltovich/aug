@@ -75,8 +75,7 @@ class Levinshtein(BaseAlignment):
         return result1, result2
 
     def _calculate_match_mismatch_score(self, seq1, seq2, i, j):
-        match_or_mismatch_score = self.mismatch_score if seq2[i - 1] != seq1[j - 1] else self.match_score
-        return match_or_mismatch_score
+        return self.mismatch_score if seq2[i - 1] != seq1[j - 1] else self.match_score
 
     def _reconstruct_until_zero_row_or_column(self, distance, result1, result2, seq1, seq2, swap_case_on_mismatch):
         i = len(distance) - 1
@@ -126,6 +125,8 @@ class NeedlemanWunsch(Levinshtein):
         self.match_score = match_score
         self.mismatch_score = mismatch_score
         self.gap_score = gap_score
+        if score_matrix and (match_score != 1 or mismatch_score != -1):
+            raise ValueError("All (mis)match score should be presented in score_matrix param")
         self.score_matrix = score_matrix
         # the following field are for affine gap
         self.gap_start = gap_start
@@ -152,6 +153,12 @@ class NeedlemanWunsch(Levinshtein):
             self._calculate_distance_with_affine_gap(match_or_mismatch_score, i, j, i_minus_1, j_minus_1)
         else:
             super().calculate_distance(seq1, seq2, distances, i, j)
+
+    def score(self, distances):
+        if self.gap_start is not None:
+            return max(self._gap_matrix_m[-1][-1], self._gap_matrix_x[-1][-1], self._gap_matrix_y[-1][-1])
+        else:
+            return -super().score(distances)
 
     def _init_m(self, i, j):
         return self.min_ if i > 0 and j == 0 or j > 0 and i == 0 else 0
@@ -182,11 +189,12 @@ class NeedlemanWunsch(Levinshtein):
                                        (gap_start_score + self._gap_matrix_x[i_minus_1][j]),
                                        (self.gap_score + self._gap_matrix_y[i_minus_1][j]))
 
-    def score(self, distances):
-        if self.gap_start is not None:
-            return max(self._gap_matrix_m[-1][-1], self._gap_matrix_x[-1][-1], self._gap_matrix_y[-1][-1])
+    def _calculate_match_mismatch_score(self, seq1, seq2, i, j):
+        if self.score_matrix is not None:
+            match_or_mismatch_score = self.score_matrix[seq2[i - 1]][seq1[j - 1]]
+            return match_or_mismatch_score
         else:
-            return -super().score(distances)
+            return super()._calculate_match_mismatch_score(seq1, seq2, i, j)
 
     def _reconstruct_answer(self, seq1, seq2, distance, swap_case_on_mismatch=True):
         if self.gap_start is not None:
@@ -210,7 +218,6 @@ class NeedlemanWunsch(Levinshtein):
             while i or j:
                 i_minus_1 = i - 1
                 j_minus_1 = j - 1
-                #print("".join(reversed(result1)), "".join(reversed(result2)))
                 if self._affine_mis_or_match_case(current_matrix, i, j, prev_i, prev_j, score_m):
                     match_or_mismatch_score = self._calculate_match_mismatch_score(seq1, seq2, i, j)
                     prev_i = i
