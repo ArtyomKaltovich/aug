@@ -282,6 +282,15 @@ def test_needleman_wunsh_affine_gap():
     assert (('-a-x-c-', 'A-A-BcC'), 7) == ((line1, line2), score)
 
 
+@pytest.mark.parametrize("seq1, seq2, alignment1, alignment2, score",
+                         [["ACC", "AACCC", "  ACC ", "A ACC C", 3],
+                          ["TGTTACGG", "GGTTGACTA", "  GTT-AC GG", "G GTTgAC TA", 4]])
+def test_local_alignment(seq1, seq2, alignment1, alignment2, score):
+    method = alignments.SmithWaterman(match_score=1, mismatch_score=-1, gap_score=-1)
+    (line1, line2), actual_score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    assert ((line1, line2), actual_score) == ((alignment1, alignment2), score)
+
+
 def test_enumerate_kmers():
     assert "ACGT" == "".join(enumerate_kmers("ACGT", 1))
     assert "AAACCACC" == "".join(enumerate_kmers("AC", 2))

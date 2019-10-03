@@ -71,6 +71,34 @@ def distance_matrix_sample():
     print(score)
 
 
+def local_alignment_sample():
+    seq1 = "ACC"
+    seq2 = "AACCC"
+    #seq1 = "ALAESFNSALKQTPCPQSGVRVPLREVLQDRKVFDNHLVCYEAAA"
+    #seq2 = "MLQTPCPQSGVRVPLAESFNSALKREVLQDRKVFDNHLVCRREVFYWCTRYNTHRLHTWCGYLSPDDYEAAA"  # https://www.uniprot.org/uniprot/W5Y176.fasta
+
+    method = alignments.NeedlemanWunsch(match_score=3, mismatch_score=-3, gap_score=-2)
+    (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    print(line1)
+    print(line2)
+    print(score)
+
+    method = alignments.SmithWaterman(match_score=1, mismatch_score=-1, gap_score=-1)
+    (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    print(line1)
+    print(line2)
+    print(score)
+
+    seq1 = "TGTTACGG"
+    seq2 = "GGTTGACTA"
+    method = alignments.SmithWaterman(match_score=1, mismatch_score=-1, gap_score=-1)
+    (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    print(line1)
+    print(line2)
+    print(score)
+
+
+
 
 def test():
     seq1 = "MGTSADNALAESFNSALKREVLQDRKVFDNHLVCRREVFYWCTRYNTHRLHTWCGYLSPDDYEAAA"  # https://www.uniprot.org/uniprot/W5Y845.fasta
@@ -78,7 +106,7 @@ def test():
     seq3 = "MKREVLQDAACWPDEATCRRQVFRWAVRYNTRRRHSWCGYLSPSTYEARWAATLPTAA"  # https://www.uniprot.org/uniprot/A0A345NSW8.fasta
     seq4 = "MLKREVLRDRKVFGNPIACRQEVFRWCMRYNTHRRHSWCNLVAPDVFETETSATLTKAT" # https://www.uniprot.org/uniprot/A0A127NSH0.fasta
 
-    method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=1)
+    method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=-1)
     (line1, line2), score = align(seq4, seq3, reconstruct_answer=True, method=method)
     print(line1)
     print(line2)
@@ -99,5 +127,5 @@ def test():
 if __name__ == '__main__':
     #simple_needleman_wunsch_sample()
     #affine_gap_needleman_wunsch_sample()
-    distance_matrix_sample()
-
+    #distance_matrix_sample()
+    local_alignment_sample()
