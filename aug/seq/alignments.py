@@ -71,9 +71,9 @@ class Levinshtein(BaseAlignment):
     def init_distance_matrix(self, seq1, seq2):
         distances = [[0] * (len(seq1) + 1) for _ in range(len(seq2) + 1)]
         for x in range(1, len(distances[0])):
-            distances[0][x] = distances[0][x - 1] + self.gap_score
+            distances[0][x] = distances[0][x - 1] + self._get_gap_score(seq1[x - 1])
         for x in range(1, len(distances)):
-            distances[x][0] = distances[x - 1][0] + self.gap_score
+            distances[x][0] = distances[x - 1][0] + self._get_gap_score(seq2[x - 1])
         return distances
 
     def calculate_distance(self, seq1, seq2, distances, i, j):
@@ -81,8 +81,8 @@ class Levinshtein(BaseAlignment):
         i_minus_1 = i - 1
         j_minus_1 = j - 1
         distances[i][j] = max(distances[i_minus_1][j_minus_1] + match_or_mismatch_score,
-                              distances[i_minus_1][j] + self.gap_score,
-                              distances[i][j_minus_1] + self.gap_score)
+                              distances[i_minus_1][j] + self._get_gap_score(seq2[i_minus_1]),
+                              distances[i][j_minus_1] + self._get_gap_score(seq1[j_minus_1]))
 
     def score(self, distances):
         return -distances[-1][-1]
@@ -137,10 +137,13 @@ class Levinshtein(BaseAlignment):
                                      distance[i][j] - self._calculate_match_mismatch_score(seq1, seq2, i, j))
 
     def _insert_case(self, seq1, seq2, distance, i, j, i_minus_1, j_minus_1):
-        return i and are_equal(distance[i_minus_1][j], distance[i][j] - self.gap_score)
+        return i and are_equal(distance[i_minus_1][j], distance[i][j] - self._get_gap_score(seq2[i_minus_1]))
 
     def _delete_case(self, seq1, seq2, distance, i, j, i_minus_1, j_minus_1):
-        return j and are_equal(distance[i][j_minus_1], distance[i][j] - self.gap_score)
+        return j and are_equal(distance[i][j_minus_1], distance[i][j] - self._get_gap_score(seq1[j_minus_1]))
+
+    def _get_gap_score(self, symbol):
+        return self.gap_score
 
 
 class NeedlemanWunsch(Levinshtein):
@@ -150,6 +153,12 @@ class NeedlemanWunsch(Levinshtein):
         self.gap_score = gap_score
         if score_matrix and (match_score != 1 or mismatch_score != -1):
             raise ValueError("All (mis)match score should be presented in score_matrix param")
+        if score_matrix and "-" in score_matrix:
+            if gap_score != -1:
+                raise ValueError("Gap score already was specified in score_matrix param")
+            self._get_gap_score = self._get_gap_score_by_matrix
+        else:
+            self._get_gap_score = self._get_gap_score_by_consts
         self.score_matrix = score_matrix
         # the following field are for affine gap
         self.gap_start = gap_start
@@ -163,8 +172,8 @@ class NeedlemanWunsch(Levinshtein):
     def init_distance_matrix(self, seq1, seq2):
         if self.gap_start is not None:
             self._gap_matrix_m = [[self._init_m(i, j) for j in range(len(seq1) + 1)] for i in range(len(seq2) + 1)]
-            self._gap_matrix_x = [[self._init_x(i, j) for j in range(len(seq1) + 1)] for i in range(len(seq2) + 1)]
-            self._gap_matrix_y = [[self._init_y(i, j) for j in range(len(seq1) + 1)] for i in range(len(seq2) + 1)]
+            self._gap_matrix_x = [[self._init_x(i, j, seq1) for j in range(len(seq1) + 1)] for i in range(len(seq2) + 1)]
+            self._gap_matrix_y = [[self._init_y(i, j, seq2) for j in range(len(seq1) + 1)] for i in range(len(seq2) + 1)]
         else:
             return super().init_distance_matrix(seq1, seq2)
 
@@ -173,7 +182,7 @@ class NeedlemanWunsch(Levinshtein):
         i_minus_1 = i - 1
         j_minus_1 = j - 1
         if self.gap_start is not None:
-            self._calculate_distance_with_affine_gap(match_or_mismatch_score, i, j, i_minus_1, j_minus_1)
+            self._calculate_distance_with_affine_gap(match_or_mismatch_score, i, j, i_minus_1, j_minus_1, seq1, seq2)
         else:
             super().calculate_distance(seq1, seq2, distances, i, j)
 
@@ -186,31 +195,34 @@ class NeedlemanWunsch(Levinshtein):
     def _init_m(self, i, j):
         return self.min_ if i > 0 and j == 0 or j > 0 and i == 0 else 0
 
-    def _init_x(self, i, j):
+    def _init_x(self, i, j, seq2):
         if i > 0 and j == 0:
             return self.min_
         elif i == 0 and j > 0:
-            return self.gap_start + self.gap_score * j
+            return self.gap_start + self._get_gap_score(seq2[j - 1]) * j
         return 0
 
-    def _init_y(self, i, j):
+    def _init_y(self, i, j, seq1):
         if i > 0 and j == 0:
-            return self.gap_start + self.gap_score * i
+            return self.gap_start + self._get_gap_score(seq1[i - 1]) * i
         elif i == 0 and j > 0:
             return self.min_
         return 0
 
-    def _calculate_distance_with_affine_gap(self, match_or_mismatch_score, i, j, i_minus_1, j_minus_1):
+    def _calculate_distance_with_affine_gap(self, match_or_mismatch_score, i, j, i_minus_1, j_minus_1, seq1, seq2):
         self._gap_matrix_m[i][j] = match_or_mismatch_score + max(self._gap_matrix_m[i_minus_1][j_minus_1],
                                                                  self._gap_matrix_x[i_minus_1][j_minus_1],
                                                                  self._gap_matrix_y[i_minus_1][j_minus_1])
-        gap_start_score = self.gap_start + self.gap_score
+        gap_score = self._get_gap_score(seq1[j_minus_1])
+        gap_start_score = self.gap_start + gap_score
         self._gap_matrix_x[i][j] = max((gap_start_score + self._gap_matrix_m[i][j_minus_1]),
-                                       (self.gap_score + self._gap_matrix_x[i][j_minus_1]),
+                                       (gap_score + self._gap_matrix_x[i][j_minus_1]),
                                        (gap_start_score + self._gap_matrix_y[i][j_minus_1]))
+        gap_score = self._get_gap_score(seq2[i_minus_1])
+        gap_start_score = self.gap_start + gap_score
         self._gap_matrix_y[i][j] = max((gap_start_score + self._gap_matrix_m[i_minus_1][j]),
                                        (gap_start_score + self._gap_matrix_x[i_minus_1][j]),
-                                       (self.gap_score + self._gap_matrix_y[i_minus_1][j]))
+                                       (gap_score + self._gap_matrix_y[i_minus_1][j]))
 
     def _calculate_match_mismatch_score(self, seq1, seq2, i, j):
         if self.score_matrix is not None:
@@ -224,7 +236,6 @@ class NeedlemanWunsch(Levinshtein):
             i, j, result1, result2 = self._init_reconstruct_vars(seq1, seq2)
             prev_i = i
             prev_j = j
-            gap_start_score = self.gap_start + self.gap_score
             score = self.score(distance)
             if self._gap_matrix_m[-1][-1] == score:
                 current_matrix = "m"
@@ -252,17 +263,21 @@ class NeedlemanWunsch(Levinshtein):
                     prev_j = j
                     j = super()._on_delete(j, j_minus_1, result1, result2, seq1)
                     current_matrix = self._gap_matrix_x
+                    gap_score = self._get_gap_score(seq1[j_minus_1])
+                    gap_start_score = self.gap_start + gap_score
                     score_m = gap_start_score
-                    score_x = self.gap_score
+                    score_x = gap_score
                     score_y = gap_start_score
                 elif self._affine_insert_case(current_matrix, i, j, prev_i, prev_j, score_y):
                     prev_i = i
                     prev_j = j
                     i = super()._on_insert(i, i_minus_1, result1, result2, seq2)
                     current_matrix = self._gap_matrix_y
+                    gap_score = self._get_gap_score(seq2[i_minus_1])
+                    gap_start_score = self.gap_start + gap_score
                     score_m = gap_start_score
                     score_x = gap_start_score
-                    score_y = self.gap_score
+                    score_y = gap_score
             return result1, result2
         else:
             return super()._reconstruct_answer(seq1, seq2, distance)
@@ -284,6 +299,12 @@ class NeedlemanWunsch(Levinshtein):
         return current_matrix == "y" or \
                type(current_matrix) != str and \
                are_equal(current_matrix[prev_i][prev_j], self._gap_matrix_y[i][j] + score_y)
+
+    def _get_gap_score_by_consts(self, symbol):
+        return self.gap_score
+
+    def _get_gap_score_by_matrix(self, symbol):
+        return self.score_matrix["-"][symbol]
 
 
 class SmithWaterman(NeedlemanWunsch):

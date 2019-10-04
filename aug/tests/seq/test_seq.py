@@ -201,7 +201,7 @@ def test_edit_distance_restore_answer(seq1, seq2, alignment1, alignment2, score)
 
 
 def test_align_needleman_wunsch_as_edit_distance(random_seed):
-    # test that Needleman Wunsch works the same as edit distance with the same scores.
+    # tests that Needleman Wunsch works the same as edit distance with the same scores.
     string1 = random_string()
     string2 = random_string()
     (expected1, expected2), _ = edit_distance(string1, string2, reconstruct_answer=True,
@@ -258,6 +258,29 @@ def def_test_align_with_distance_matrix():
     method = alignments.NeedlemanWunsch(score_matrix=dist_matrix, gap_score=-10)
     (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
     assert ((line1, line2), score) == (("--XXXYZ", "йyXXX--"), 5)
+
+
+def test_align_with_gap_in_distance_matrix():
+    seq1 = "CBBBC"
+    seq2 = "ABBBA"
+
+    dist_matrix = {'A': {'A': 5, 'B': -5, 'C': -5, '-': -5},
+                   'B': {'A': -5, 'B': 5, 'C': -15, '-': -5},
+                   'C': {'A': -5, 'B': -15, 'C': 5, '-': -5},
+                   '-': {'A': -5, 'B': -5, 'C': 3, '-': 0}}
+
+    method = alignments.NeedlemanWunsch(score_matrix=dist_matrix)
+    (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    assert ((line1, line2), score) == (("-CBBB-C", "a-BBBa-"), 11)
+
+    dist_matrix = {'A': {'A': 5, 'B': -5, 'C': -5, '-': -5},
+                   'B': {'A': -5, 'B': -15, 'C': -15, '-': -5},
+                   'C': {'A': -5, 'B': -15, 'C': 5, '-': -5},
+                   '-': {'A': -5, 'B': -5, 'C': 3, '-': 0}}
+
+    method = alignments.NeedlemanWunsch(score_matrix=dist_matrix)
+    (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    assert ((line1, line2), score) == (("CB---BBC", "-abbb-a-"), -24)
 
 
 @pytest.mark.parametrize("name, value", [
