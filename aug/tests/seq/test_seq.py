@@ -154,7 +154,7 @@ def test_find_spliced_motif_non_found():
                           [alignments.NeedlemanWunsch(gap_start=10), -1, 10],
                           [alignments.NeedlemanWunsch(gap_start=-10), -1, -10]])
 def test_align_empty(random_seed, method, score_coef, score_delta):
-    string = random_string()
+    string = random_string(min_len=1)
     score = score_coef * len(string) + score_delta
     assert align(string, "", reconstruct_answer=True, method=method, swap_case_on_mismatch=False) == \
                 ((string, "-" * len(string)), score)
@@ -281,6 +281,25 @@ def test_align_with_gap_in_distance_matrix():
     method = alignments.NeedlemanWunsch(score_matrix=dist_matrix)
     (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
     assert ((line1, line2), score) == (("CB---BBC", "-abbb-a-"), -24)
+
+
+def test_random_align_with_affine_gap_in_distance_matrix(random_seed):
+    # if we specify positive gap start score there should be more gaps in alignment
+    seq1 = random_string(min_len=3, alphabet=["A", "B", "C"])
+    seq2 = random_string(min_len=3, alphabet=["A", "B", "C"])
+
+    dist_matrix = {'A': {'A': 5, 'B': -5, 'C': -5, '-': -5},
+                   'B': {'A': -5, 'B': 5, 'C': -15, '-': -5},
+                   'C': {'A': -5, 'B': -15, 'C': 5, '-': -5},
+                   '-': {'A': -5, 'B': -5, 'C': 3, '-': 0}}
+
+    method = alignments.NeedlemanWunsch(score_matrix=dist_matrix)
+    (alignment1, alignment2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    method = alignments.NeedlemanWunsch(score_matrix=dist_matrix, gap_start=20)
+    (gap_start_alignment1, gap_start_alignment2), gap_start_score \
+        = align(seq1, seq2, reconstruct_answer=True, method=method)
+    assert len(alignment1.split("-")) <= len(gap_start_alignment1.split("-"))
+    assert len(alignment2.split("-")) <= len(gap_start_alignment2.split("-"))
 
 
 @pytest.mark.parametrize("name, value", [

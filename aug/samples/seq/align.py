@@ -72,6 +72,18 @@ def distance_matrix_sample():
     print(line2)
     print(score)
 
+    dist_matrix = {'X': {'-': -3, 'Й': -5, 'Z': -5, 'Y': -5, 'X': 5},
+                   'Y': {'-': -5, 'Й': -5, 'Z': -5, 'Y': 5, 'X': -5},
+                   'Z': {'-': 3, 'Й': -15, 'Z': 8, 'Y': -5, 'X': -5},
+                   'Й': {'-': -3, 'Й': 8, 'Z': -15, 'Y': -5, 'X': -5},
+                   '-': {'-': 0, 'Й': -3, 'Z': 3, 'Y': -5, 'X': -3}}
+
+    method = alignments.NeedlemanWunsch(score_matrix=dist_matrix, gap_start=55)
+    (line1, line2), score = align(seq1, seq2, reconstruct_answer=True, method=method)
+    print(line1)
+    print(line2)
+    print(score)
+
 
 def local_alignment_sample():
     seq1 = "ACC"
@@ -127,7 +139,7 @@ def test():
 
 
 if __name__ == '__main__':
-    #simple_needleman_wunsch_sample()
-    #affine_gap_needleman_wunsch_sample()
+    simple_needleman_wunsch_sample()
+    affine_gap_needleman_wunsch_sample()
     distance_matrix_sample()
-    #local_alignment_sample()
+    local_alignment_sample()

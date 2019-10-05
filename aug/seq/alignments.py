@@ -171,9 +171,9 @@ class NeedlemanWunsch(Levinshtein):
 
     def init_distance_matrix(self, seq1, seq2):
         if self.gap_start is not None:
-            self._gap_matrix_m = [[self._init_m(i, j) for j in range(len(seq1) + 1)] for i in range(len(seq2) + 1)]
-            self._gap_matrix_x = [[self._init_x(i, j, seq1) for j in range(len(seq1) + 1)] for i in range(len(seq2) + 1)]
-            self._gap_matrix_y = [[self._init_y(i, j, seq2) for j in range(len(seq1) + 1)] for i in range(len(seq2) + 1)]
+            self._init_m(seq1, seq2)
+            self._init_x(seq1, seq2)
+            self._init_y(seq1, seq2)
         else:
             return super().init_distance_matrix(seq1, seq2)
 
@@ -192,22 +192,28 @@ class NeedlemanWunsch(Levinshtein):
         else:
             return -super().score(distances)
 
-    def _init_m(self, i, j):
-        return self.min_ if i > 0 and j == 0 or j > 0 and i == 0 else 0
+    def _init_m(self, seq1, seq2):
+        self._gap_matrix_m = [[0 for _ in range(len(seq1) + 1)] for _ in range(len(seq2) + 1)]
+        for i in range(1, len(seq1) + 1):
+            self._gap_matrix_m[0][i] = self.min_
+        for i in range(1, len(seq2) + 1):
+            self._gap_matrix_m[i][0] = self.min_
 
-    def _init_x(self, i, j, seq2):
-        if i > 0 and j == 0:
-            return self.min_
-        elif i == 0 and j > 0:
-            return self.gap_start + self._get_gap_score(seq2[j - 1]) * j
-        return 0
+    def _init_x(self, seq1, seq2):
+        self._gap_matrix_x = [[self.gap_start for j in range(len(seq1) + 1)] for i in range(len(seq2) + 1)]
+        for i in range(1, len(seq1) + 1):
+            self._gap_matrix_x[0][i] = self._gap_matrix_x[0][i - 1] + self._get_gap_score(seq1[i - 1])
+        for i in range(1, len(seq2) + 1):
+            self._gap_matrix_x[i][0] = self.min_
+        self._gap_matrix_x[0][0] = 0
 
-    def _init_y(self, i, j, seq1):
-        if i > 0 and j == 0:
-            return self.gap_start + self._get_gap_score(seq1[i - 1]) * i
-        elif i == 0 and j > 0:
-            return self.min_
-        return 0
+    def _init_y(self, seq1, seq2):
+        self._gap_matrix_y = [[self.gap_start for j in range(len(seq1) + 1)] for i in range(len(seq2) + 1)]
+        for i in range(1, len(seq1) + 1):
+            self._gap_matrix_y[0][i] = self.min_
+        for i in range(1, len(seq2) + 1):
+            self._gap_matrix_y[i][0] = self._gap_matrix_y[i - 1][0] + self._get_gap_score(seq2[i - 1])
+        self._gap_matrix_y[0][0] = 0
 
     def _calculate_distance_with_affine_gap(self, match_or_mismatch_score, i, j, i_minus_1, j_minus_1, seq1, seq2):
         self._gap_matrix_m[i][j] = match_or_mismatch_score + max(self._gap_matrix_m[i_minus_1][j_minus_1],
