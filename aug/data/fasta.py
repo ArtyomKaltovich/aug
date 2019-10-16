@@ -1,5 +1,5 @@
 def fasta_file_iter(path: str):
-    """ Return an iterator based on fasta file, so you can use it if for cycle
+    """ Return an iterator based on fasta file, so you can use it in for cycle
     Usage:
         profile_matrix = None
         for id, dna in fasta_file_iter("data/test_profile_fasta.txt"):
