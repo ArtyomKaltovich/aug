@@ -7,12 +7,14 @@ from functools import lru_cache
 from typing import List, Union, Dict, Tuple, Collection, Callable
 
 import numpy as np
+from graphviz import Digraph, Graph
 from scipy.special import comb
 
 from aug.data.fasta import fasta_file_iter
 from aug.seq import alignments
 
 complement_map = {"A": "T", "C": "G", "G": "C", "T": "A"}
+rna_complement_map = {"A": "U", "C": "G", "G": "C", "U": "A"}
 START_CODON = "AUG"
 STOP_CODON = object()  # dummy object for stop codon
 rna_codon_table = { "UUU": "F",         "CUU": "L",     "AUU": "I",      "GUU": "V",
@@ -801,3 +803,62 @@ def transition_transversion_ratio(dna1: str, dna2: str):
     """
     transition, transversion = transition_transversion(dna1, dna2)
     return transition / transversion
+
+
+def rna_structure_prediction(rna: str, min_size=3):
+    """
+    https://en.wikipedia.org/wiki/Nucleic_acid_structure_prediction
+    :param rna:
+    :param min_size:
+    :return:
+
+    >>> rna_structure_prediction("ACCCU")
+    ([(0, 4)], 1)
+    >>> rna_structure_prediction("CCCAAAGGGAAAGGGAAACCC")
+    ([(0, 8), (1, 7), (2, 6), (12, 20), (13, 19), (14, 18)], 0)
+    """
+    matrix = [[(0, 0, 0)] * len(rna) for _ in rna]
+    rna_to_int_map = dict(A=1, C=2, G=3, U=4)  # sum == 5 if complementary
+    rna_int = [rna_to_int_map[letter] for letter in rna]  # use sum instead of dictionary lookup
+    min_size += 1
+    for n in range(len(rna_int) - min_size):
+        for i in range(len(rna_int) - min_size - n):
+            j = i + min_size + n
+            m1 = max((matrix[i + 1][j][0], i + 1, j),
+                     (matrix[i][j - 1][0], i, j - 1))
+            complement_score = matrix[i + 1][j - 1][0] + 1 if rna_int[i] + rna_int[j] == 5 else 0
+            m1 = m1 if m1[0] >= complement_score else (complement_score, i + 1, j - 1)
+            m2 = max((matrix[i][k][0] + matrix[k][j][0], i, k, k, j) for k in range(i + 1, j + 1))
+            matrix[i][j] = m1 if m1[0] >= m2[0] else m2
+    return _rna_structure_reconstruct_answer(matrix, i=0, j=len(rna) - 1), matrix[0][-1][1]
+
+
+def _rna_structure_reconstruct_answer(matrix, i, j):
+    score = matrix[i][j]
+    structure = []
+    while score[0]:
+        if len(score) == 3:
+            _, next_i, next_j = score
+            if next_i - 1 == i and next_j + 1 == j:
+                structure.append((i, j))
+            i = next_i
+            j = next_j
+            score = matrix[next_i][next_j]
+        else:
+            _, i1, j1, i2, j2 = score
+            return structure + _rna_structure_reconstruct_answer(matrix, i1, j1)\
+                   + _rna_structure_reconstruct_answer(matrix, i2, j2)
+    return structure
+
+
+def rna_structure_to_graphviz(rna, structure):
+    """ Produce graphviz graph for rna structure visualization
+    :Note: Use "neato" engine for better look
+    """
+    dot = Graph()
+    for i, letter in enumerate(rna):
+        dot.node(str(i), letter)
+    dot.edges((str(i - 1), str(i)) for i in range(1, len(rna)))
+    for start, end in structure:
+            dot.edge(str(start), str(end), style="dashed")
+    return dot
