@@ -1,7 +1,7 @@
 import pytest
 
 from aug.seq.seq import gc_rate, profile
-from aug.data.fasta import fasta_file_iter, fasta_data_do, read_fasta
+from aug.data.fasta import *
 from aug.tests import FLOAT_EQUALITY_ACCURACY, base_data_path
 
 
@@ -52,3 +52,9 @@ def test_fasta_profile(base_data_path):
         profile_matrix = profile(dna, profile_matrix)
     expected = {'A': [5, 1, 0, 0, 5, 5, 0, 0], 'C': [0, 0, 1, 4, 2, 0, 6, 1], 'G': [1, 1, 6, 3, 0, 1, 0, 0], 'T': [1, 5, 0, 0, 0, 1, 1, 6]}
     assert expected == profile_matrix
+
+
+class TestUnite:
+    def test_unite_folder(self, base_data_path):
+        unite_fasta_in_folder(base_data_path + "test_data_files/unite", file_name_part_to_id=".")
+        # TODO: add assert
