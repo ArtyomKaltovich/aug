@@ -28,5 +28,5 @@ def read_file():
 if __name__ == '__main__':
     #file=open("data/answer.txt", "w")
     data = read_fasta("data/rosalind_data.txt", without_id=True)
-    print(transition_transversion_ratio(*data))
+    print(longest_common_substring(data))
 
