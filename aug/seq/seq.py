@@ -7,11 +7,14 @@ from functools import lru_cache
 from typing import List, Union, Dict, Tuple, Collection, Callable
 
 import numpy as np
+from graphviz import Digraph, Graph
 from scipy.special import comb
 
 from aug.data.fasta import fasta_file_iter
+from aug.seq import alignments
 
 complement_map = {"A": "T", "C": "G", "G": "C", "T": "A"}
+rna_complement_map = {"A": "U", "C": "G", "G": "C", "U": "A"}
 START_CODON = "AUG"
 STOP_CODON = object()  # dummy object for stop codon
 rna_codon_table = { "UUU": "F",         "CUU": "L",     "AUU": "I",      "GUU": "V",
@@ -57,6 +60,79 @@ monoisotopic_mass_table = {
 }
 
 inverted_monoisotopic_mass = sorted(((value, key) for key, value in monoisotopic_mass_table.items()))
+
+#  https://web.archive.org/web/19991011081928/http://www.embl-heidelberg.de/%7Evogt/matrices/blosum62.cmp
+blosum62 = \
+{'A': {'X': 0, 'Z': -1, 'B': -2, 'V': 0, 'Y': -2, 'W': -3, 'T': 0, 'S': 1, 'P': -1, 'F': -2,
+       'M': -1, 'K': -1, 'L': -1, 'I': -1, 'H': -2, 'G': 0, 'E': -1, 'Q': -1, 'C': 0, 'D': -2,
+       'N': -2, 'R': -1, 'A': 4},
+ 'R': {'X': -1, 'Z': 0, 'B': -1, 'V': -3, 'Y': -2, 'W': -3, 'T': -1, 'S': -1, 'P': -2, 'F': -3,
+       'M': -1, 'K': 2, 'L': -2, 'I': -3, 'H': 0, 'G': -2, 'E': 0, 'Q': 1, 'C': -3, 'D': -2,
+       'N': 0, 'R': 5, 'A': -1},
+ 'N': {'X': -1, 'Z': 0, 'B': 3, 'V': -3, 'Y': -2, 'W': -4, 'T': 0, 'S': 1, 'P': -2, 'F': -3,
+       'M': -2, 'K': 0, 'L': -3, 'I': -3, 'H': 1, 'G': 0, 'E': 0, 'Q': 0, 'C': -3, 'D': 1,
+       'N': 6, 'R': 0, 'A': -2},
+ 'D': {'X': -1, 'Z': 1, 'B': 4, 'V': -3, 'Y': -3, 'W': -4, 'T': -1, 'S': 0, 'P': -1, 'F': -3,
+       'M': -3, 'K': -1, 'L': -4, 'I': -3, 'H': -1, 'G': -1, 'E': 2, 'Q': 0, 'C': -3, 'D': 6,
+       'N': 1, 'R': -2, 'A': -2},
+ 'C': {'X': -2, 'Z': -3, 'B': -3, 'V': -1, 'Y': -2, 'W': -2, 'T': -1, 'S': -1, 'P': -3, 'F': -2,
+       'M': -1, 'K': -3, 'L': -1, 'I': -1, 'H': -3, 'G': -3, 'E': -4, 'Q': -3, 'C': 9, 'D': -3,
+       'N': -3, 'R': -3, 'A': 0},
+ 'Q': {'X': -1, 'Z': 3, 'B': 0, 'V': -2, 'Y': -1, 'W': -2, 'T': -1, 'S': 0, 'P': -1, 'F': -3,
+       'M': 0, 'K': 1, 'L': -2, 'I': -3, 'H': 0, 'G': -2, 'E': 2, 'Q': 5, 'C': -3, 'D': 0,
+       'N': 0, 'R': 1, 'A': -1},
+ 'E': {'X': -1, 'Z': 4, 'B': 1, 'V': -2, 'Y': -2, 'W': -3, 'T': -1, 'S': 0, 'P': -1, 'F': -3,
+       'M': -2, 'K': 1, 'L': -3, 'I': -3, 'H': 0, 'G': -2, 'E': 5, 'Q': 2, 'C': -4, 'D': 2,
+       'N': 0, 'R': 0, 'A': -1},
+ 'G': {'X': -1, 'Z': -2, 'B': -1, 'V': -3, 'Y': -3, 'W': -2, 'T': -2, 'S': 0, 'P': -2, 'F': -3,
+       'M': -3, 'K': -2, 'L': -4, 'I': -4, 'H': -2, 'G': 6, 'E': -2, 'Q': -2, 'C': -3, 'D': -1,
+       'N': 0, 'R': -2, 'A': 0},
+ 'H': {'X': -1, 'Z': 0, 'B': 0, 'V': -3, 'Y': 2, 'W': -2, 'T': -2, 'S': -1, 'P': -2, 'F': -1,
+       'M': -2, 'K': -1, 'L': -3, 'I': -3, 'H': 8, 'G': -2, 'E': 0, 'Q': 0, 'C': -3, 'D': -1,
+       'N': 1, 'R': 0, 'A': -2},
+ 'I': {'X': -1, 'Z': -3, 'B': -3, 'V': 3, 'Y': -1, 'W': -3, 'T': -1, 'S': -2, 'P': -3, 'F': 0,
+       'M': 1, 'K': -3, 'L': 2, 'I': 4, 'H': -3, 'G': -4, 'E': -3, 'Q': -3, 'C': -1, 'D': -3,
+       'N': -3, 'R': -3, 'A': -1},
+ 'L': {'X': -1, 'Z': -3, 'B': -4, 'V': 1, 'Y': -1, 'W': -2, 'T': -1, 'S': -2, 'P': -3, 'F': 0,
+       'M': 2, 'K': -2, 'L': 4, 'I': 2, 'H': -3, 'G': -4, 'E': -3, 'Q': -2, 'C': -1, 'D': -4,
+       'N': -3, 'R': -2, 'A': -1},
+ 'K': {'X': -1, 'Z': 1, 'B': 0, 'V': -2, 'Y': -2, 'W': -3, 'T': -1, 'S': 0, 'P': -1, 'F': -3,
+       'M': -1, 'K': 5, 'L': -2, 'I': -3, 'H': -1, 'G': -2, 'E': 1, 'Q': 1, 'C': -3, 'D': -1,
+       'N': 0, 'R': 2, 'A': -1},
+ 'M': {'X': -1, 'Z': -1, 'B': -3, 'V': 1, 'Y': -1, 'W': -1, 'T': -1, 'S': -1, 'P': -2, 'F': 0,
+       'M': 5, 'K': -1, 'L': 2, 'I': 1, 'H': -2, 'G': -3, 'E': -2, 'Q': 0, 'C': -1, 'D': -3,
+       'N': -2, 'R': -1, 'A': -1},
+ 'F': {'X': -1, 'Z': -3, 'B': -3, 'V': -1, 'Y': 3, 'W': 1, 'T': -2, 'S': -2, 'P': -4, 'F': 6,
+       'M': 0, 'K': -3, 'L': 0, 'I': 0, 'H': -1, 'G': -3, 'E': -3, 'Q': -3, 'C': -2, 'D': -3,
+       'N': -3, 'R': -3, 'A': -2},
+ 'P': {'X': -2, 'Z': -1, 'B': -2, 'V': -2, 'Y': -3, 'W': -4, 'T': -1, 'S': -1, 'P': 7, 'F': -4,
+       'M': -2, 'K': -1, 'L': -3, 'I': -3, 'H': -2, 'G': -2, 'E': -1, 'Q': -1, 'C': -3, 'D': -1,
+       'N': -2, 'R': -2, 'A': -1},
+ 'S': {'X': 0, 'Z': 0, 'B': 0, 'V': -2, 'Y': -2, 'W': -3, 'T': 1, 'S': 4, 'P': -1, 'F': -2,
+       'M': -1, 'K': 0, 'L': -2, 'I': -2, 'H': -1, 'G': 0, 'E': 0, 'Q': 0, 'C': -1, 'D': 0,
+       'N': 1, 'R': -1, 'A': 1},
+ 'T': {'X': 0, 'Z': -1, 'B': -1, 'V': 0, 'Y': -2, 'W': -2, 'T': 5, 'S': 1, 'P': -1, 'F': -2,
+       'M': -1, 'K': -1, 'L': -1, 'I': -1, 'H': -2, 'G': -2, 'E': -1, 'Q': -1, 'C': -1, 'D': -1,
+       'N': 0, 'R': -1, 'A': 0},
+ 'W': {'X': -2, 'Z': -3, 'B': -4, 'V': -3, 'Y': 2, 'W': '11', 'T': -2, 'S': -3, 'P': -4, 'F': 1,
+       'M': -1, 'K': -3, 'L': -2, 'I': -3, 'H': -2, 'G': -2, 'E': -3, 'Q': -2, 'C': -2, 'D': -4,
+       'N': -4, 'R': -3, 'A': -3},
+ 'Y': {'X': -1, 'Z': -2, 'B': -3, 'V': -1, 'Y': 7, 'W': 2, 'T': -2, 'S': -2, 'P': -3, 'F': 3,
+       'M': -1, 'K': -2, 'L': -1, 'I': -1, 'H': 2, 'G': -3, 'E': -2, 'Q': -1, 'C': -2, 'D': -3,
+       'N': -2, 'R': -2, 'A': -2},
+ 'V': {'X': -1, 'Z': -2, 'B': -3, 'V': 4, 'Y': -1, 'W': -3, 'T': 0, 'S': -2, 'P': -2, 'F': -1,
+       'M': 1, 'K': -2, 'L': 1, 'I': 3, 'H': -3, 'G': -3, 'E': -2, 'Q': -2, 'C': -1, 'D': -3,
+       'N': -3, 'R': -3, 'A': 0},
+ 'B': {'X': -1, 'Z': 1, 'B': 4, 'V': -3, 'Y': -3, 'W': -4, 'T': -1, 'S': 0, 'P': -2, 'F': -3,
+       'M': -3, 'K': 0, 'L': -4, 'I': -3, 'H': 0, 'G': -1, 'E': 1, 'Q': 0, 'C': -3, 'D': 4,
+       'N': 3, 'R': -1, 'A': -2},
+ 'Z': {'X': -1, 'Z': 4, 'B': 1, 'V': -2, 'Y': -2, 'W': -3, 'T': -1, 'S': 0, 'P': -1, 'F': -3,
+       'M': -1, 'K': 1, 'L': -3, 'I': -3, 'H': 0, 'G': -2, 'E': 4, 'Q': 3, 'C': -3, 'D': 1,
+       'N': 0, 'R': 0, 'A': -1},
+ 'X': {'X': -1, 'Z': -1, 'B': -1, 'V': -1, 'Y': -1, 'W': -2, 'T': 0, 'S': 0, 'P': -2, 'F': -1,
+       'M': -1, 'K': -1, 'L': -1, 'I': -1, 'H': -1, 'G': -1, 'E': -1, 'Q': -1, 'C': -2, 'D': -1,
+       'N': -1, 'R': -1, 'A': 0}
+}
 
 
 def dna_to_rna(dna: str, start=0):
@@ -183,13 +259,14 @@ def all_possible_gene_transcription(dna: str):
     return result
 
 
-def gc_rate(dna: str, procent=False):
+def gc_rate(dna: str, percent=False):
     """ returns rate for G and C in dna
-    :param procent:
+    :param dna: dna as a string
+    :param percent: set to True if you want return result as a procent [0, 100], of false as an [0, 1] ratio.
     """
     c = Counter(dna)
     result = (c["G"] + c["C"]) / len(dna)
-    return result * 100 if procent else result
+    return result * 100 if percent else result
 
 
 def hamming_distance(p, q):
@@ -296,6 +373,7 @@ def profile(dna: Union[list, tuple, str], update: Union[list, None]=None) -> dic
     """
     Function takes a list of strings DNA as input and returns the profile matrix (as a dictionary of lists).
     :param dna: a list of strings (or just one string) which represent a genome part
+    :param update: a dict to update values (e.g. for separated calculations), None to generate new dict
     :return: dictionary where keys are A, C, G, T and values are list with their occurrences in patterns
         on that index.
     :example:
@@ -379,7 +457,7 @@ def find_reverse_palindromes(dna: str, min_len: int=4, max_len: int=12, zero_bas
 def bernul(n, k, p):
     """ returns probability of k occurrences in n Bernoulli trial with probability p
         https://en.wikipedia.org/wiki/Bernoulli_trial
-    :param n: number of test
+    :param n: number of tests
     :param k: number of successes
     :param p: probability of every success
     :return: probability of k occurrences in n Bernoulli trial
@@ -503,23 +581,38 @@ def find_spliced_motif(dna: str, motif: str, zero_based=True) -> Union[List[int]
     return _helper_for_non_zero_based(result, zero_based)
 
 
-def edit_distance(str1, str2, reconstract_answer=False):
+def align(seq1, seq2, reconstruct_answer=True, method=None, swap_case_on_mismatch=True):
+    """ align two sequences
+    :param seq1:
+    :param seq2:
+    :return:
+    >>> method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=-10)
+    >>> align("AXC", "AABCC", reconstruct_answer=True, method=method)
+    (('A--XC', 'AabcC'), -11)
+    >>> method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=1)
+    >>> align("AXC", "AABCC", reconstruct_answer=True, method=method)
+    (('-A-X-C', 'aAb-cC'), 2)
+    """
+    method = alignments.NeedlemanWunsch(match_score=1, mismatch_score=-1, gap_score=-1, gap_start=1) \
+        if method is None else method
+    distances = method.init_distance_matrix(seq1, seq2)
+    for i, j in itertools.product(list(range(1, len(seq2) + 1)), list(range(1, len(seq1) + 1))):
+        method.calculate_distance(seq1, seq2, distances, i, j)
+    score = method.score(distances)
+    if reconstruct_answer:
+        return method.reconstruct_answer(seq1, seq2, distances, swap_case_on_mismatch), score
+    else:
+        return score
+
+
+def edit_distance(str1, str2, reconstruct_answer=False, method=alignments.Levinshtein(),
+                  swap_case_on_mismatch=True):
     """ Calculate editing distance between two strings.
     >>> edit_distance("editing", "distance")
     5
     """
-    distances = [[0] * (len(str1) + 1) for _ in range(len(str2) + 1)]
-    distances[0] = [x for x in range(len(str1) + 1)]
-    for x in range(len(str2) + 1):
-        distances[x][0] = x
-    for i, j in itertools.product(list(range(1, len(str2) + 1)), list(range(1, len(str1) + 1))):
-        distances[i][j] = min(distances[i - 1][j] + 1, distances[i][j - 1] + 1,
-                              distances[i - 1][j - 1] + (str2[i - 1] != str1[j - 1]))
-    if reconstract_answer:
-        pass
-        # TODO: reconstract answer
-    else:
-        return distances[-1][-1]
+    method = alignments.Levinshtein() if method is None else method
+    return align(str1, str2, reconstruct_answer, method, swap_case_on_mismatch)
 
 
 def enumerate_kmers(alphabet: Union[str, List[str]], length: int):
@@ -710,6 +803,65 @@ def transition_transversion_ratio(dna1: str, dna2: str):
     """
     transition, transversion = transition_transversion(dna1, dna2)
     return transition / transversion
+
+
+def rna_structure_prediction(rna: str, min_size=3):
+    """
+    https://en.wikipedia.org/wiki/Nucleic_acid_structure_prediction
+    :param rna:
+    :param min_size:
+    :return:
+
+    >>> rna_structure_prediction("ACCCU")
+    ([(0, 4)], 1)
+    >>> rna_structure_prediction("CCCAAAGGGAAAGGGAAACCC")
+    ([(0, 8), (1, 7), (2, 6), (12, 20), (13, 19), (14, 18)], 0)
+    """
+    matrix = [[(0, 0, 0)] * len(rna) for _ in rna]
+    rna_to_int_map = dict(A=1, C=2, G=3, U=4)  # sum == 5 if complementary
+    rna_int = [rna_to_int_map[letter] for letter in rna]  # use sum instead of dictionary lookup
+    min_size += 1
+    for n in range(len(rna_int) - min_size):
+        for i in range(len(rna_int) - min_size - n):
+            j = i + min_size + n
+            m1 = max((matrix[i + 1][j][0], i + 1, j),
+                     (matrix[i][j - 1][0], i, j - 1))
+            complement_score = matrix[i + 1][j - 1][0] + 1 if rna_int[i] + rna_int[j] == 5 else 0
+            m1 = m1 if m1[0] >= complement_score else (complement_score, i + 1, j - 1)
+            m2 = max((matrix[i][k][0] + matrix[k][j][0], i, k, k, j) for k in range(i + 1, j + 1))
+            matrix[i][j] = m1 if m1[0] >= m2[0] else m2
+    return _rna_structure_reconstruct_answer(matrix, i=0, j=len(rna) - 1), matrix[0][-1][1]
+
+
+def _rna_structure_reconstruct_answer(matrix, i, j):
+    score = matrix[i][j]
+    structure = []
+    while score[0]:
+        if len(score) == 3:
+            _, next_i, next_j = score
+            if next_i - 1 == i and next_j + 1 == j:
+                structure.append((i, j))
+            i = next_i
+            j = next_j
+            score = matrix[next_i][next_j]
+        else:
+            _, i1, j1, i2, j2 = score
+            return structure + _rna_structure_reconstruct_answer(matrix, i1, j1)\
+                   + _rna_structure_reconstruct_answer(matrix, i2, j2)
+    return structure
+
+
+def rna_structure_to_graphviz(rna, structure):
+    """ Produce graphviz graph for rna structure visualization
+    :Note: Use "neato" engine for better look
+    """
+    dot = Graph()
+    for i, letter in enumerate(rna):
+        dot.node(str(i), letter)
+    dot.edges((str(i - 1), str(i)) for i in range(1, len(rna)))
+    for start, end in structure:
+            dot.edge(str(start), str(end), style="dashed")
+    return dot
 
 
 def longest_common_substring(strings):
