@@ -710,3 +710,32 @@ def transition_transversion_ratio(dna1: str, dna2: str):
     """
     transition, transversion = transition_transversion(dna1, dna2)
     return transition / transversion
+
+
+def longest_common_substring(strings):
+    #tree = SuffixTree(strings[0])
+    #result = strings
+    #for index in range(1, len(strings)):
+    #    tree.add(strings[index])
+    #    result = tree.make_common_tree()
+    #return result
+
+    first = strings[0]
+
+    for current in range(1, len(strings)):
+        max_idx = 0
+        max_len = 0
+        second = strings[current]
+        array = [[0] * len(second) for _ in range(len(first))]
+        for i in range(len(first)):
+            array[i][0] = first[i] == second[0]
+        for j in range(len(second)):
+            array[0][j] = first[0] == second[j]
+        for i in range(1, len(first)):
+            for j in range(1, len(second)):
+                array[i][j] = array[i - 1][j - 1] + 1 if first[i] == second[j] else 0
+                if array[i][j] > max_len:
+                    max_len = array[i][j]
+                    max_idx = i
+        first = first[max_idx - max_len + 1:max_idx + 1]
+    return first

@@ -1,5 +1,4 @@
 import textwrap
-
 import pytest
 
 from aug.comb.comb import gen_substrings
@@ -242,3 +241,16 @@ def test_transition_transversion_ratio():
     dna1 = "GCAACGCACAACGAAAACCCTTAGGGACTGGATTATTTCGTGATCGTTGTAGTTATTGGAAGTACGGGCATCAACCCAGTT"
     dna2 = "TTATCTGACAAAGAAAGCCGTCAACGGCTGGATAATTTCGCGATCGTGCTGGTTACTGGCGGTACGAGTGTTCCTTTGGGT"
     assert 1.214 == pytest.approx(transition_transversion_ratio(dna1, dna2), FLOAT_EQUALITY_ACCURACY)
+
+
+def test_longest_common_substring():
+    assert ['ba', 'ab'] == longest_common_substring(["abba", "baba"])
+    assert ['anana'] == longest_common_substring(["banana", "ananas"])
+    assert ['ban'] == longest_common_substring(["banana", "ban"])
+
+
+def test_longest_common_substring3():
+    assert ['ba'] == longest_common_substring(["baobab", "bamboo", "banana"])
+    assert ['an'] == longest_common_substring(["ananas", "ban", "banana"])\
+           == longest_common_substring(["banana", "ananas", "ban"])
+    assert 'AC' in longest_common_substring(["GATTACA", "TAGACCA", "ATACA"])
