@@ -1,10 +1,10 @@
->3.id1
+>1.id1
+aaa
+>1.id2
+bbb
+>2.id2__1
+ccc
+>3.id1__1
 abc
 >3.id5
 ggg
->2.id1__1
-aaa
->2.id2
-ccc
->1.id2__1
-bbb

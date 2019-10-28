@@ -170,7 +170,7 @@ def is_fasta_extension(path, fasta_extensions={"fasta", "faa"}):
 def unite_fasta_in_folder(folder: str, fasta_extensions={"fasta", "faa"}, file_name_part_to_id=None, id_sep=".",
                           append_sep="__"):
     for dirpath, dirnames, filenames in os.walk(folder):
-        filenames = {name for name in filenames if is_fasta_extension(name, fasta_extensions)}
+        filenames = [name for name in filenames if is_fasta_extension(name, fasta_extensions)]
         with _with_dir(dirpath):
             print(dirpath + ".fasta", *filenames, file_name_part_to_id, id_sep, append_sep)
             unite_fasta(dirpath + ".fasta", *filenames, file_name_part_to_id=file_name_part_to_id, id_sep=id_sep,
