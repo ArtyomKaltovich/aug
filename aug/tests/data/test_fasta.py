@@ -57,4 +57,5 @@ def test_fasta_profile(base_data_path):
 class TestUnite:
     def test_unite_folder(self, base_data_path):
         unite_fasta_in_folder(base_data_path + "test_data_files/unite", file_name_part_to_id=".")
-        # TODO: add assert
+        actual = read_fasta(base_data_path + "test_data_files/unite.fasta")
+        assert actual == [('1.id1', 'aaa'), ('1.id2', 'bbb'), ('2.id2__1', 'ccc'), ('3.id1__1', 'abc'), ('3.id5', 'ggg')]
