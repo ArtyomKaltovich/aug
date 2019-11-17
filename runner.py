@@ -60,4 +60,4 @@ if __name__ == '__main__':
     #                      path_=["material"],
     #                      country="Antarctica", order="name", limit=300,
     #                      investigation_type="metagenome")
-    unite_fasta_in_folder(r"C:\Users\artem\Downloads\antarctica_metagenomes\air", file_name_part_to_id=".")
+    unite_fasta_in_folder(r"/run/media/my/New Volume/temp/antarctica_metagenomes", file_name_part_to_id=".")
