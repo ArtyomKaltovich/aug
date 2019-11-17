@@ -1,2 +1,2 @@
-Rosalind tasks solutions.
-For code review.
+The library for simplifying the life of a bioinformatician.
+
