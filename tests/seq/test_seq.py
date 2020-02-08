@@ -7,8 +7,8 @@ from aug.comb.comb import gen_substrings
 from aug.heredity.Phenotype import *
 from aug.heredity.heredity import n_expected_dominant_phenotype
 from aug.seq.seq import *
-from aug.tests import FLOAT_EQUALITY_ACCURACY, base_data_path
-from aug.tests.utils import random_string
+from tests import FLOAT_EQUALITY_ACCURACY
+from tests.utils import random_string
 
 
 def test_dna_to_rna():
@@ -48,7 +48,7 @@ def test_all_possible_gene_transcription():
 def test_gc_rate():
     param = "CCACCCTCGTGGTATGGCTAGGCATTCAGGAACCGGAGAACGCTTCAGACCAGCCCGGACTGGGAACCTGCGGGCAGTAGGTGGAAT"
     expected = 60.9195
-    assert expected == pytest.approx(gc_rate(param, percent=True), FLOAT_EQUALITY_ACCURACY)
+    assert expected == pytest.approx(gc_rate(param, percent=True))
 
 
 def test_hamming_distance():
@@ -102,11 +102,11 @@ def test_dying_rabbits():
 
 
 def test_calculate_protein_mass():
-    assert 821.392 == pytest.approx(calculate_protein_mass("SKADYEK"), FLOAT_EQUALITY_ACCURACY)
+    assert 821.392 == pytest.approx(calculate_protein_mass("SKADYEK"))
 
 
 def test_dominant_probability():
-    assert 0.78333 == pytest.approx(dominant_probability(2, 2, 2), FLOAT_EQUALITY_ACCURACY)
+    assert 0.78333 == pytest.approx(dominant_probability(2, 2, 2))
 
 
 def test_consensus():
@@ -130,8 +130,8 @@ def test_find_reverse_palindromes():
 
 
 def test_dna_probability():
-    assert 1.831e-06 == pytest.approx(dna_probability("ACGATACAA", 0.129), FLOAT_EQUALITY_ACCURACY)
-    assert -5.737 == pytest.approx(dna_probability("ACGATACAA", 0.129, return_log=True), FLOAT_EQUALITY_ACCURACY)
+    assert 1.831e-06 == pytest.approx(dna_probability("ACGATACAA", 0.129))
+    assert -5.737 == pytest.approx(dna_probability("ACGATACAA", 0.129, return_log=True))
 
 
 def test_find_spliced_motif():
@@ -398,7 +398,7 @@ def test_gen_substrings():
 def test_adjacency_list(base_data_path):
     expected = [('Rosalind_0498', 'Rosalind_2391'), ('Rosalind_0498', 'Rosalind_0442'),
                 ('Rosalind_2391', 'Rosalind_2323')]
-    actual = adjacency_list(base_data_path + "test_data_files/test_adjacency_list.txt", k=3)
+    actual = adjacency_list(base_data_path + r"test_adjacency_list.txt", k=3)
     assert len(expected) == len(actual)
     for val in expected:
         assert val in actual
@@ -423,17 +423,17 @@ def test_find_protein_motif_by_shorthand():
 def test_transition_transversion_ratio():
     dna1 = "GCAACGCACAACGAAAACCCTTAGGGACTGGATTATTTCGTGATCGTTGTAGTTATTGGAAGTACGGGCATCAACCCAGTT"
     dna2 = "TTATCTGACAAAGAAAGCCGTCAACGGCTGGATAATTTCGCGATCGTGCTGGTTACTGGCGGTACGAGTGTTCCTTTGGGT"
-    assert 1.214 == pytest.approx(transition_transversion_ratio(dna1, dna2), FLOAT_EQUALITY_ACCURACY)
+    assert 1.214 == pytest.approx(transition_transversion_ratio(dna1, dna2))
 
 
-def test_longest_common_substring():
-    assert ['ba', 'ab'] == longest_common_substring(["abba", "baba"])
-    assert ['anana'] == longest_common_substring(["banana", "ananas"])
-    assert ['ban'] == longest_common_substring(["banana", "ban"])
-
-
-def test_longest_common_substring3():
-    assert ['ba'] == longest_common_substring(["baobab", "bamboo", "banana"])
-    assert ['an'] == longest_common_substring(["ananas", "ban", "banana"])\
-           == longest_common_substring(["banana", "ananas", "ban"])
-    assert 'AC' in longest_common_substring(["GATTACA", "TAGACCA", "ATACA"])
+#def test_longest_common_substring():
+#    assert ['ba', 'ab'] == longest_common_substring(["abba", "baba"])
+#    assert ['anana'] == longest_common_substring(["banana", "ananas"])
+#    assert ['ban'] == longest_common_substring(["banana", "ban"])
+#
+#
+#def test_longest_common_substring3():
+#    assert ['ba'] == longest_common_substring(["baobab", "bamboo", "banana"])
+#    assert ['an'] == longest_common_substring(["ananas", "ban", "banana"])\
+#           == longest_common_substring(["banana", "ananas", "ban"])
+#    assert 'AC' in longest_common_substring(["GATTACA", "TAGACCA", "ATACA"])
