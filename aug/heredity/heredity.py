@@ -3,6 +3,9 @@ import heapq
 import itertools
 from typing import Dict, Tuple
 
+import numpy as np
+from scipy.stats import chi2
+
 from aug.heredity.Phenotype import PhenotypeHeredityTable
 
 
@@ -20,6 +23,39 @@ def n_expected_dominant_phenotype(n_parents, n_children=1):
     for n, pair in zip(n_parents, (("AA", "AA"), ("AA", "Aa"), ("AA", "aa"), ("Aa", "Aa"), ("Aa", "aa"), ("aa", "aa"))):
         result += n * phenotype.dominant_phenotype_prob(pair) * n_children
     return result
+
+
+def test_hwe(n_homo_dominant, n_hetero, n_homo_recessive) -> float:
+    """ Statistical test for Hardy–Weinberg equilibrium
+
+    Parameters
+    ----------
+    n_homo_dominant: float, int
+        Number of dominant homozygous (usually labeled as AA)
+    n_hetero: float, int
+        Number of heterozygous (Aa)
+    n_homo_recessive: float, int
+        Number of recessive homozygous (Aa)
+
+    Returns
+    -------
+    result: float
+        Probability of such distribution if Hardy–Weinberg equilibrium is true
+
+    Examples
+    --------
+    >>> test_hwe(313, 102, 85)
+    1.0
+    """
+    actual = [n_homo_dominant, n_hetero, n_homo_recessive]
+    n = sum(actual)
+    p = (n_homo_dominant * 2 + n_hetero) / n / 2
+    q = (n_homo_recessive * 2 + n_hetero) / n / 2
+    expected = np.array([p ** 2, 2 * p * q, q ** 2])
+    expected *= n
+    s = (actual - expected) ** 2 / expected
+    s = sum(s)
+    return 1 - chi2(2).cdf(s)
 
 
 class PhylogenyTree:
