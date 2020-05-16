@@ -6,7 +6,7 @@ import numpy
 import pytest
 
 FLOAT_EQUALITY_ACCURACY = 0.001
-pytest.approx = partial(pytest.approx, rel=FLOAT_EQUALITY_ACCURACY)
+pytest.approx = partial(pytest.approx, abs=FLOAT_EQUALITY_ACCURACY)
 
 
 @pytest.fixture

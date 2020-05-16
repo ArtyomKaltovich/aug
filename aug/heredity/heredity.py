@@ -4,9 +4,10 @@ import itertools
 from typing import Dict, Tuple
 
 import numpy as np
-from scipy.stats import chi2
+from scipy.stats import chi2, binom
 
 from aug.heredity.Phenotype import PhenotypeHeredityTable
+from aug.seq.seq import codon_iter, dna_codon_table, protein_dna_codon_table, hamming_distance
 
 
 def n_expected_dominant_phenotype(n_parents, n_children=1):
@@ -45,7 +46,7 @@ def test_hwe(n_homo_dominant, n_hetero, n_homo_recessive) -> float:
     Examples
     --------
     >>> test_hwe(313, 102, 85)
-    1.0
+    0.0
     """
     actual = [n_homo_dominant, n_hetero, n_homo_recessive]
     n = sum(actual)
@@ -56,6 +57,103 @@ def test_hwe(n_homo_dominant, n_hetero, n_homo_recessive) -> float:
     s = (actual - expected) ** 2 / expected
     s = sum(s)
     return 1 - chi2(2).cdf(s)
+
+
+def test_wright_fisher(n, initial_part, final_part) -> float:
+    """ performs Wright Fisher test for genetic drift
+
+    Parameters
+    ----------
+    n: int
+        Population size
+    initial_part: float
+        Started part of allele. Should be in 0 to 1 range.
+    final_part: float
+        Final part of allele. Should be in 0 to 1 range.
+
+    Returns
+    -------
+    result: float
+        probability of genetic drift
+
+    Examples
+    --------
+
+    >>> t = test_wright_fisher(20, 0.5, 0.25)
+    >>> round(t, 4)
+    0.0008
+
+    >>> test_wright_fisher(10, 0, 0)
+    1.0
+    """
+    n = 2 * n
+    k = int(round(n * final_part))
+    return binom(n, initial_part).pmf(k)
+
+
+class SelectionBalanceMethods:
+    @staticmethod
+    def dn_ds(seq1, seq2):
+        missense_expected = 0
+        sym_expected = 0
+        missense_actual = 0
+        sym_actual = 0
+        for codon1, codon2 in zip(codon_iter(seq1), codon_iter(seq2)):
+            protein1 = dna_codon_table[codon1]
+            protein2 = dna_codon_table[codon2]
+            n = SelectionBalanceMethods._n_adj_of_symmetric_mutations(codon1, protein1)
+            missense_expected += n
+            sym_expected += 3 - n
+            missense_actual, sym_actual = \
+                SelectionBalanceMethods._change_actual_rate(missense_actual, sym_actual, codon1, codon2,
+                                                            protein1, protein2)
+        pn = missense_actual / missense_expected
+        ps = sym_actual / sym_expected
+        d = np.array((pn, ps))
+        d = - 3 / 4 * np.log(1 - 4 / 3 * d)
+        return d[0]/d[1]
+
+
+    @staticmethod
+    def _change_actual_rate(missense_actual, sym_actual, codon1, codon2, protein1, protein2):
+        if codon1 != codon2:
+            if protein1 != protein2:
+                missense_actual += 1
+            else:
+                sym_actual += 1
+        return missense_actual, sym_actual
+
+    @staticmethod
+    def _n_adj_of_symmetric_mutations(codon, protein):
+        n = 3
+        for c in protein_dna_codon_table[protein]:
+            if hamming_distance(c, codon) == 1:
+                n -= 1 / 3
+        return n
+
+
+def selection_balance(seq1, seq2, method=SelectionBalanceMethods.dn_ds):
+    """ Check the neutrality of evolution
+
+    Parameters
+    ----------
+    seq1: str
+    seq2: str
+    method:
+
+    Returns
+    -------
+    result: float
+        statistic value
+
+    Examples
+    --------
+
+    >>> dnds = selection_balance("ATTAGTCGTTCATCC", "ATTAGACGTTCCTCC")
+    >>> round(dnds, 3)
+    0.319
+    """
+    return method(seq1, seq2)
 
 
 class PhylogenyTree:

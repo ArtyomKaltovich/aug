@@ -35,6 +35,26 @@ rna_codon_table = { "UUU": "F",         "CUU": "L",     "AUU": "I",      "GUU": 
                     "UGG": "W",         "CGG": "R",     "AGG": "R",      "GGG": "G",
 }
 protein_n_codons_table = Counter(rna_codon_table.values())
+dna_codon_table = { "TTT": "F",         "CTT": "L",     "ATT": "I",      "GTT": "V",
+                    "TTC": "F",         "CTC": "L",     "ATC": "I",      "GTC": "V",
+                    "TTA": "L",         "CTA": "L",     "ATA": "I",      "GTA": "V",
+                    "TTG": "L",         "CTG": "L",     "ATG": "M",      "GTG": "V",
+                    "TCT": "S",         "CCT": "P",     "ACT": "T",      "GCT": "A",
+                    "TCC": "S",         "CCC": "P",     "ACC": "T",      "GCC": "A",
+                    "TCA": "S",         "CCA": "P",     "ACA": "T",      "GCA": "A",
+                    "TCG": "S",         "CCG": "P",     "ACG": "T",      "GCG": "A",
+                    "TAT": "Y",         "CAT": "H",     "AAT": "N",      "GAT": "D",
+                    "TAC": "Y",         "CAC": "H",     "AAC": "N",      "GAC": "D",
+                    "TAA": STOP_CODON,  "CAA": "Q",     "AAA": "K",      "GAA": "E",
+                    "TAG": STOP_CODON,  "CAG": "Q",     "AAG": "K",      "GAG": "E",
+                    "TGT": "C",         "CGT": "R",     "AGT": "S",      "GGT": "G",
+                    "TGC": "C",         "CGC": "R",     "AGC": "S",      "GGC": "G",
+                    "TGA": STOP_CODON,  "CGA": "R",     "AGA": "R",      "GGA": "G",
+                    "TGG": "W",         "CGG": "R",     "AGG": "R",      "GGG": "G",
+}
+protein_dna_codon_table = defaultdict(list)
+for codon, protein in dna_codon_table.items():
+    protein_dna_codon_table[protein].append(codon)
 
 monoisotopic_mass_table = {
     "A":  71.03711,
@@ -863,6 +883,24 @@ def rna_structure_to_graphviz(rna, structure):
             dot.edge(str(start), str(end), style="dashed")
     return dot
 
+
+def codon_iter(seq):
+    """ returns an iterator with all codons in the sequence
+    
+    Returns 
+    Parameters
+    ----------
+    seq: str
+        sequence
+
+    Returns
+    -------
+    iterator: iterator[string]
+    """
+    if len(seq) % 3:
+        raise ValueError("the sequence length are not devided by 3")
+    return string_to_kmers(seq, 3)
+    
 
 def longest_common_substring(strings):
     #tree = SuffixTree(strings[0])
